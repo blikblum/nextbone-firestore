@@ -1,6 +1,6 @@
 {
   "name": "nextbone-firestore",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A project template for authoring and publishing JavaScript libraries",
   "repository": "blikblum/nextbone-firestore",
   "author": "Luiz Américo Pereira Câmara",
@@ -11,8 +11,8 @@
   "keywords": [],
   "main": "dist/nextbone-firestore.js",
   "peerDependencies": {
-    "nextbone": "^0.20.0",
-    "lodash-es": "^4.17.15"
+    "lodash-es": "^4.17.15",
+    "nextbone": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.10.4",
