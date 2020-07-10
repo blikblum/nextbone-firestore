@@ -6,22 +6,7 @@ module.exports = {
         targets: {
           browsers: ['firefox 57'],
         },
-        modules: false,
       },
     ],
   ],
-  env: {
-    test: {
-      presets: [
-        [
-          '@babel/preset-env',
-          {
-            targets: {
-              node: 'current',
-            },
-          },
-        ],
-      ],
-    },
-  },
 }
