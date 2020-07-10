@@ -20,7 +20,7 @@ const outputName = pkg.name
 
 const exportName = pkg.name
 
-const formats = ['es', 'umd']
+const formats = ['es']
 
 // Compile source code into a distributable format with Babel
 formats.forEach((format) => {
