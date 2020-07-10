@@ -1,5 +1,5 @@
 import { Collection, Events } from 'nextbone'
-import { uniqueId } from 'underscore'
+import { uniqueId } from 'lodash-es'
 
 import { FireModel } from './model'
 
