@@ -1,60 +1,65 @@
 import { Model } from 'nextbone'
 
+const isOnline = () => {
+  if (typeof navigator !== 'undefined') {
+    return navigator.onLine
+  }
+  return false
+}
+
+const getDocRef = (model, method) => {
+  if (method === 'create') {
+    const refRoot = model.refRoot()
+    return refRoot ? refRoot.doc() : undefined
+  }
+  return model.ref()
+}
+
 class FireModel extends Model {
-  ref() {
-    let result
+  refRoot() {
     if (this.collection) {
-      result = this.collection.ref()
-      if (result && !this.isNew()) {
-        result = result.doc(this.id)
-      }
+      return this.collection.ref()
     }
-    return result
+  }
+
+  ref() {
+    const refRoot = this.refRoot()
+    if (refRoot && !this.isNew()) {
+      return refRoot.doc(this.id)
+    }
+    return refRoot
   }
 
   async sync(method, options) {
-    const ref = this.ref()
+    const docRef = getDocRef(this, method)
 
-    if (!ref) {
+    if (!docRef) {
       throw new Error(`FireModel: ref not defined`)
     }
     const { id, ...modelData } = this.toJSON(options)
     const data = options.attrs || modelData
-    const isOnline = navigator.onLine
-    let response
+    let action
     switch (method) {
+      case 'create':
       case 'update':
-        if (isOnline) {
-          await ref.set(data)
-        } else {
-          ref.set(data)
-        }
-
+        action = docRef.set(data)
         break
       case 'patch':
-        if (isOnline) {
-          await ref.update(data)
-        } else {
-          ref.update(data)
-        }
-        break
-      case 'create':
-        let docRef
-        if (isOnline) {
-          docRef = await ref.add(data)
-        } else {
-          docRef = ref.doc()
-          docRef.set(data)
-        }
-        response = { ...docRef.data(), id: docRef.id }
+        action = docRef.update(data)
         break
       case 'delete':
-        await ref.delete()
+        action = docRef.delete()
         break
       default:
         throw new Error(`FireModel: unrecognized sync method: "${method}"`)
     }
-    return response || modelData
+    if (isOnline()) {
+      await action
+    }
+    if (method === 'create') {
+      return { ...modelData, id: docRef.id }
+    }
+    return modelData
   }
 }
 

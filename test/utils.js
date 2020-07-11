@@ -1,4 +1,4 @@
-export class RefMock {
+export class ReferenceMock {
   constructor(parent, id) {
     this.parent = parent
     this.id = id
@@ -18,15 +18,19 @@ export class RefMock {
   }
 }
 
-export class CollectionMock extends RefMock {
+export class CollectionReferenceMock extends ReferenceMock {
   doc(id) {
-    return new DocMock(this, id)
+    return new DocReferenceMock(this, id)
   }
 }
 
-export class DocMock extends RefMock {
+export class DocReferenceMock extends ReferenceMock {
   collection(id) {
-    return new CollectionMock(this, id)
+    return new CollectionReferenceMock(this, id)
+  }
+
+  set(data) {
+    this._data = data
   }
 }
 
@@ -36,10 +40,10 @@ export class FirestoreMock {
   }
 
   doc(id) {
-    return new DocMock(this, id)
+    return new DocReferenceMock(this, id)
   }
 
   collection(id) {
-    return new CollectionMock(this, id)
+    return new CollectionReferenceMock(this, id)
   }
 }
