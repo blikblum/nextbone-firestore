@@ -39,7 +39,12 @@ class FireModel extends Model {
     const { id, ...modelData } = this.toJSON(options)
     const data = options.attrs || modelData
     let action
+    let response = modelData
     switch (method) {
+      case 'read':
+        const snapshot = await docRef.get()
+        response = { ...snapshot.data(), id: docRef.id }
+        break
       case 'create':
       case 'update':
         action = docRef.set(data)
@@ -53,13 +58,13 @@ class FireModel extends Model {
       default:
         throw new Error(`FireModel: unrecognized sync method: "${method}"`)
     }
-    if (isOnline()) {
+    if (action && isOnline()) {
       await action
     }
     if (method === 'create') {
-      return { ...modelData, id: docRef.id }
+      response = { ...modelData, id: docRef.id }
     }
-    return modelData
+    return response
   }
 }
 

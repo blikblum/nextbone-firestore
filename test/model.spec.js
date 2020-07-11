@@ -3,6 +3,7 @@ import {
   FirestoreMock,
   CollectionReferenceMock,
   DocReferenceMock,
+  DocSnapshotMock,
 } from './utils'
 import { expect } from 'chai'
 import { spy, stub } from 'sinon'
@@ -85,37 +86,40 @@ describe('FireModel', () => {
   })
 
   describe('sync', () => {
-    it('should call ref.get when destroying a model', async () => {
+    it('should call refRoot.get when fetching a model', async () => {
+      const docRef = db.collection('myCollection').doc('x')
       const getStub = stub()
-      getStub.resolves({})
+      getStub.resolves(new DocSnapshotMock(docRef.id, { foo: 'bar', test: 1 }))
+      docRef.get = getStub
       class TestModel extends FireModel {
         ref() {
-          return { delete: getStub }
+          return docRef
         }
       }
-      const model = new TestModel({ id: 'x', foo: 'bar', test: 'a' })
-      await model.destroy()
+      const model = new TestModel()
+      await model.fetch()
       expect(getStub).to.be.calledOnce
+      expect(model.attributes).to.be.eql({ id: 'x', foo: 'bar', test: 1 })
     })
 
     it('should create a doc ref and call its set with when saving new model', async () => {
-      const docRef = new DocReferenceMock(null, 'xyz')
       const collectionRef = db.collection('myCollection')
+      const docRef = collectionRef.doc()
+      const docStub = stub(collectionRef, 'doc')
       const setSpy = spy(docRef, 'set')
+      docStub.returns(docRef)
+
       class TestModel extends FireModel {
         refRoot() {
-          return {
-            doc() {
-              return docRef
-            },
-          }
+          return collectionRef
         }
       }
       const model = new TestModel({ foo: 'bar', test: 'a' })
       await model.save()
+      expect(docStub).to.be.calledOnce
       expect(setSpy).to.be.calledOnceWithExactly({ foo: 'bar', test: 'a' })
       expect(model.attributes).to.be.eql({
-        id: 'xyz',
+        id: docRef.id,
         foo: 'bar',
         test: 'a',
       })

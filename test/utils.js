@@ -18,9 +18,11 @@ export class ReferenceMock {
   }
 }
 
+let idCount = 0
+
 export class CollectionReferenceMock extends ReferenceMock {
-  doc(id) {
-    return new DocReferenceMock(this, id)
+  doc(id = ++idCount) {
+    return new DocReferenceMock(this, `${id}`)
   }
 }
 
@@ -45,5 +47,16 @@ export class FirestoreMock {
 
   collection(id) {
     return new CollectionReferenceMock(this, id)
+  }
+}
+
+export class DocSnapshotMock {
+  constructor(id, data) {
+    this.id = id
+    this._data = data
+  }
+
+  data() {
+    return this._data
   }
 }
