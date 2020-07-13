@@ -72,6 +72,7 @@ class FireCollection extends Collection {
     if (!this._ref) {
       this._ref = this.getRef()
     }
+    return this._ref
   }
 
   resetRef(sync) {
@@ -279,6 +280,18 @@ class FireCollection extends Collection {
     this.logDebug(`Change loading state: ${isLoading}`)
     this.changeReady(!isLoading)
     this.isLoading = isLoading
+  }
+
+  async sync() {
+    const ref = this.ensureRef()
+    const snapshot = await ref.get()
+    const data = snapshot.docs.map((doc) => ({
+      ...doc.data({
+        serverTimestamps: this.options.serverTimestamps,
+      }),
+      id: doc.id,
+    }))
+    return data
   }
 }
 

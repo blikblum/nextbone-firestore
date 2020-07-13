@@ -60,3 +60,18 @@ export class DocSnapshotMock {
     return this._data
   }
 }
+
+export class QueryDocSnapshotMock extends DocSnapshotMock {}
+
+export class QuerySnapshotMock {
+  constructor(data) {
+    this._data = data
+  }
+
+  get docs() {
+    return this._data.map((item) => {
+      const { id, ...data } = item
+      return new QueryDocSnapshotMock(id, data)
+    })
+  }
+}
