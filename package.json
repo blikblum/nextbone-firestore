@@ -17,12 +17,14 @@
   "devDependencies": {
     "@babel/core": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
+    "@firebase/testing": "^0.20.11",
     "chai": "^4.2.0",
     "del": "^5.1.0",
     "eslint": "^7.4.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
     "esm": "^3.2.25",
+    "firebase-tools": "^8.13.1",
     "lodash-es": "^4.17.15",
     "mocha": "^8.0.1",
     "nextbone": "^0.20.0",
@@ -34,6 +36,7 @@
   },
   "scripts": {
     "lint": "eslint src test tools",
+    "firebase:start": "firebase emulators:start --only firestore",
     "test": "mocha --require esm test/setup.js test/*.spec.js",
     "test:watch": "mocha --watch --require esm test/setup.js test/*.spec.js",
     "build": "node tools/build",

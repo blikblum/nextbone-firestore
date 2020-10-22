@@ -1,21 +1,15 @@
+import { expect } from 'chai'
+import { spy } from 'sinon'
 import { FireCollection } from '../src/collection'
 import {
-  FirestoreMock,
-  CollectionReferenceMock,
-  DocReferenceMock,
-  DocSnapshotMock,
-  QuerySnapshotMock,
-} from './utils'
-import { expect } from 'chai'
-import { spy, stub } from 'sinon'
+  initializeDataset,
+  clearDataset,
+  collectionName,
+  collectionData,
+} from './helpers/dataset'
+import { db, CollectionReference } from './helpers/firebase'
 
 describe('FireCollection', () => {
-  let db
-
-  beforeEach(() => {
-    db = new FirestoreMock()
-  })
-
   describe('ref', () => {
     it('should return undefined by default', () => {
       const model = new FireCollection()
@@ -30,21 +24,23 @@ describe('FireCollection', () => {
       }
       const collection = new TestCollection()
       const ref = collection.ref()
-      expect(ref).to.be.instanceOf(CollectionReferenceMock)
+      expect(ref).to.be.instanceOf(CollectionReference)
       expect(ref.path).to.equal('collectionPath')
     })
   })
 
   describe('sync', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
     it('should call ref get when fetching a collection', async () => {
-      const collectionRef = db.collection('myCollection')
-      const getStub = stub().resolves(
-        new QuerySnapshotMock([
-          { id: 'x', foo: 'bar' },
-          { id: 'y', foo: 'foo' },
-        ])
-      )
-      collectionRef.get = getStub
+      const collectionRef = db.collection(collectionName).orderBy('count')
+      const getSpy = spy(collectionRef, 'get')
       class TestCollection extends FireCollection {
         ref() {
           return collectionRef
@@ -52,9 +48,10 @@ describe('FireCollection', () => {
       }
       const collection = new TestCollection()
       await collection.fetch()
-      expect(getStub).to.be.calledOnce
-      expect(collection.get('x').attributes).to.be.eql({ id: 'x', foo: 'bar' })
-      expect(collection.get('y').attributes).to.be.eql({ id: 'y', foo: 'foo' })
+      const responseData = collection.map((model) => model.omit('id'))
+
+      expect(getSpy).to.be.calledOnce
+      expect(responseData).to.be.eql(collectionData)
     })
   })
 })
