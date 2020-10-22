@@ -1,6 +1,8 @@
 {
-  "plugins": ["prettier"],
-  "extends": ["plugin:prettier/recommended"],
+  "extends": [
+    "eslint:recommended",
+    "prettier"
+  ],
   "parserOptions": {
     "ecmaVersion": 2019,
     "sourceType": "module"
@@ -8,7 +10,15 @@
   "env": {
     "es6": true
   },
-  "rules": {
-    "prettier/prettier": "error"
-  }
+  "overrides": [
+    {
+      "files": [
+        "test/**/*.js"
+      ],
+      "env": {
+        "mocha": true
+      }
+    }
+  ],
+  "rules": {}
 }

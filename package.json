@@ -1,37 +1,41 @@
 {
   "name": "nextbone-firestore",
   "version": "0.3.0",
-  "description": "A project template for authoring and publishing JavaScript libraries",
+  "description": "Classes to use Firestore with Nextbone",
   "repository": "blikblum/nextbone-firestore",
   "author": "Luiz Américo Pereira Câmara",
   "contributors": [
     "Luiz Américo Pereira Câmara"
   ],
   "license": "MIT",
-  "keywords": [],
+  "keywords": [
+    "nextbone",
+    "firestore",
+    "firebase",
+    "state"
+  ],
   "main": "dist/nextbone-firestore.js",
   "peerDependencies": {
     "lodash-es": "^4.17.15",
     "nextbone": "^0.20.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.10.4",
-    "@babel/preset-env": "^7.10.4",
+    "@babel/core": "^7.12.3",
+    "@babel/preset-env": "^7.12.1",
     "@firebase/testing": "^0.20.11",
     "chai": "^4.2.0",
-    "del": "^5.1.0",
-    "eslint": "^7.4.0",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-prettier": "^3.1.4",
+    "del": "^6.0.0",
+    "eslint": "^7.11.0",
+    "eslint-config-prettier": "^6.14.0",
     "esm": "^3.2.25",
     "firebase-tools": "^8.13.1",
     "lodash-es": "^4.17.15",
-    "mocha": "^8.0.1",
-    "nextbone": "^0.20.0",
-    "prettier": "^2.0.5",
-    "rollup": "^2.21.0",
+    "mocha": "^8.2.0",
+    "nextbone": "^0.21.0",
+    "prettier": "^2.1.2",
+    "rollup": "^2.32.1",
     "rollup-plugin-babel": "^4.4.0",
-    "sinon": "^9.0.2",
+    "sinon": "^9.2.0",
     "sinon-chai": "^3.5.0"
   },
   "scripts": {
