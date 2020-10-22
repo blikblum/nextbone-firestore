@@ -7,7 +7,11 @@ import {
   collectionName,
   collectionData,
 } from './helpers/dataset'
-import { db, CollectionReference } from './helpers/firebase'
+import {
+  db,
+  CollectionReference,
+  createCollectionRef,
+} from './helpers/firebase'
 
 describe('FireCollection', () => {
   describe('ref', () => {
@@ -52,6 +56,25 @@ describe('FireCollection', () => {
 
       expect(getSpy).to.be.calledOnce
       expect(responseData).to.be.eql(collectionData)
+    })
+  })
+
+  describe('addDocument', () => {
+    it('should add a new document', async () => {
+      const collectionRef = createCollectionRef()
+      const addSpy = spy(collectionRef, 'add')
+      class TestCollection extends FireCollection {
+        ref() {
+          return collectionRef
+        }
+      }
+      const collection = new TestCollection()
+
+      await collection.addDocument({ foo: 'bar' })
+      const snapshot = await collectionRef.get()
+      expect(addSpy).to.be.calledOnce
+      expect(snapshot.docs.length).to.be.equal(1)
+      expect(snapshot.docs[0].data()).to.be.eql({ foo: 'bar' })
     })
   })
 })

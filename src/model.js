@@ -1,11 +1,5 @@
 import { Model } from 'nextbone'
-
-const isOnline = () => {
-  if (typeof navigator !== 'undefined') {
-    return navigator.onLine
-  }
-  return false
-}
+import { isOnline } from './utils.js'
 
 const getDocRef = (model, method) => {
   if (method === 'create') {

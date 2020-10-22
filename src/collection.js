@@ -1,7 +1,7 @@
 import { Collection, Events } from 'nextbone'
 import { uniqueId } from 'lodash-es'
-
 import { FireModel } from './model'
+import { isOnline } from './utils.js'
 
 const optionDefaults = {
   serverTimestamps: 'estimate',
@@ -120,13 +120,13 @@ class FireCollection extends Collection {
     }
     this.trigger('request')
   }
-  async add(data) {
+  async addDocument(data) {
     // todo add a separated cache for ref (necessary when query is defined)
     const ref = this.ref()
     if (!hasReference(ref)) {
       throw new Error(`Can not add a document to a collection that has no ref`)
     }
-    if (navigator.onLine) {
+    if (isOnline()) {
       await ref.add(data)
     } else {
       ref.add(data)
