@@ -12,13 +12,6 @@ function hasReference(ref) {
 }
 
 class FireCollection extends Collection {
-  static decorator(instance) {
-    //hack to fix decorator limitation
-    //works only when using next-service
-    instance._applyRefSources()
-    return instance
-  }
-
   constructor(options) {
     super()
     this.isDebugEnabled = false
@@ -32,20 +25,6 @@ class FireCollection extends Collection {
     if (options) {
       this.options = Object.assign(Object.assign({}, optionDefaults), options)
       this.isDebugEnabled = options.debug || false
-    }
-  }
-
-  _applyRefSources() {
-    const refSources = this.constructor.__refSources
-    if (refSources) {
-      refSources.forEach((name) => {
-        if (this.hasOwnProperty(name)) {
-          // eslint-disable-line
-          const value = this[name]
-          delete this[name]
-          this[name] = value
-        }
-      })
     }
   }
 
@@ -332,7 +311,6 @@ const refSource = (optionsOrProtoOrDescriptor, fieldName, events) => {
   if (!isLegacy) {
     const {
       kind,
-      key,
       placement,
       descriptor,
       initializer,
@@ -344,8 +322,6 @@ const refSource = (optionsOrProtoOrDescriptor, fieldName, events) => {
       descriptor,
       key,
       finisher(ctor) {
-        const refSources = ctor.__refSources || (ctor.__refSources = new Set())
-        refSources.add(name)
         Object.defineProperty(ctor.prototype, name, fieldDescriptor)
       },
     }
