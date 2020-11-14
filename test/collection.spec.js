@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spy } from 'sinon'
+import { spy, stub } from 'sinon'
 import { FireCollection } from '../src/collection'
 import {
   initializeDataset,
@@ -11,6 +11,7 @@ import {
   db,
   CollectionReference,
   createCollectionRef,
+  Query,
 } from './helpers/firebase'
 
 describe('FireCollection', () => {
@@ -30,6 +31,49 @@ describe('FireCollection', () => {
       const ref = collection.ref()
       expect(ref).to.be.instanceOf(CollectionReference)
       expect(ref.path).to.equal('collectionPath')
+    })
+  })
+
+  describe('resetRef', () => {
+    it('should call ref and return its result', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection('collectionPath')
+        }
+      }
+      const collection = new TestCollection()
+      const refSpy = spy(collection, 'ref')
+      const ref = await collection.resetRef()
+      expect(ref.path).to.equal('collectionPath')
+      expect(refSpy).to.be.calledOnce
+    })
+
+    it('should call query with return from ref', async () => {
+      const ref = db.collection('collectionPath')
+      class TestCollection extends FireCollection {
+        query(ref) {
+          return ref.orderBy('name')
+        }
+      }
+      const collection = new TestCollection()
+      stub(collection, 'ref').returns(ref)
+      const querySpy = spy(collection, 'query')
+      const resolvedRef = await collection.resetRef()
+      expect(querySpy).to.be.calledOnce.and.be.calledWith(ref)
+      expect(resolvedRef).to.be.instanceOf(Query)
+    })
+
+    it('should call ref only once when called in same microtask', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection('collectionPath')
+        }
+      }
+      const collection = new TestCollection()
+      const refSpy = spy(collection, 'ref')
+      collection.resetRef()
+      await collection.resetRef()
+      expect(refSpy).to.be.calledOnce
     })
   })
 

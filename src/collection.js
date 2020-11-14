@@ -54,19 +54,15 @@ class FireCollection extends Collection {
     return this._ref
   }
 
-  resetRef(sync) {
-    if (sync) {
+  async resetRef() {
+    if (!this.resetPromise) {
+      // by default batch reset calls
+      this.resetPromise = Promise.resolve()
+      await this.resetPromise
       this.changeSource(this.getRef())
-    } else {
-      if (!this.resetPromise) {
-        // by default batch reset calls
-        this.resetPromise = Promise.resolve()
-        this.resetPromise.then(() => {
-          this.changeSource(this.getRef())
-          this.resetPromise = undefined
-        })
-      }
+      this.resetPromise = undefined
     }
+    return this._ref
   }
 
   changeSource(newRef) {
