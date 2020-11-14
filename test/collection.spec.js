@@ -63,6 +63,18 @@ describe('FireCollection', () => {
       expect(resolvedRef).to.be.instanceOf(Query)
     })
 
+    it('should not call query when ref returns undefined', async () => {
+      class TestCollection extends FireCollection {
+        query(ref) {
+          return ref.orderBy('name')
+        }
+      }
+      const collection = new TestCollection()
+      const querySpy = spy(collection, 'query')
+      await collection.resetRef()
+      expect(querySpy).to.not.be.called
+    })
+
     it('should call ref only once when called in same microtask', async () => {
       class TestCollection extends FireCollection {
         ref() {

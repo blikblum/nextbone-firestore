@@ -44,7 +44,8 @@ class FireCollection extends Collection {
   }
 
   getRef() {
-    return this.query(this.ref())
+    const ref = this.ref()
+    return ref ? this.query(ref) : ref
   }
 
   ensureRef() {
