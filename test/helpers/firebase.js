@@ -1,7 +1,7 @@
-import * as firebase from '@firebase/testing'
+import * as firebase from '@firebase/rules-unit-testing'
 import { uniqueId } from 'lodash-es'
 
-const app = firebase.initializeTestApp({
+export const app = firebase.initializeTestApp({
   projectId: 'nextbone-firestore-test',
   auth: { uid: 'alice', email: 'alice@example.com' },
 })
