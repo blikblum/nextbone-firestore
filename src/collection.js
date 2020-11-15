@@ -111,8 +111,11 @@ class FireCollection extends Collection {
     }
   }
 
-  ready() {
+  async ready() {
     const isListening = !!this.onSnapshotUnsubscribeFn
+    if (this.resetPromise) {
+      await this.resetPromise
+    }
     this.ensureRef()
     if (!isListening) {
       /**

@@ -184,7 +184,7 @@ describe('FireCollection', () => {
       await clearDataset()
     })
 
-    it('should fetch data and resolves when data loaded', async () => {
+    it('when not observing should fetch data and resolves when data loaded', async () => {
       class TestCollection extends FireCollection {
         ref() {
           return db.collection(collectionName)
@@ -194,6 +194,64 @@ describe('FireCollection', () => {
       const collection = new TestCollection()
       await collection.ready()
       expect(collection.length).to.be.equal(collectionData.length)
+    })
+
+    it('when not observing and ref is updated should refetch data', async () => {
+      class TestCollection extends FireCollection {
+        countParam = 1
+
+        ref() {
+          return db.collection(collectionName)
+        }
+
+        query(ref) {
+          return ref.where('count', '==', this.countParam)
+        }
+      }
+
+      const collection = new TestCollection()
+      await collection.ready()
+      expect(collection.at(0).get('count')).to.be.equal(1)
+      collection.countParam = 2
+      collection.resetRef()
+      await collection.ready()
+      expect(collection.at(0).get('count')).to.be.equal(2)
+    })
+
+    it('when observing should resolve when data loaded', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection(collectionName)
+        }
+      }
+
+      const collection = new TestCollection()
+      collection.observe()
+      await collection.ready()
+      expect(collection.length).to.be.equal(collectionData.length)
+    })
+
+    it('when observing and ref is updated should resolve with updated data', async () => {
+      class TestCollection extends FireCollection {
+        countParam = 1
+
+        ref() {
+          return db.collection(collectionName)
+        }
+
+        query(ref) {
+          return ref.where('count', '==', this.countParam)
+        }
+      }
+
+      const collection = new TestCollection()
+      collection.observe()
+      await collection.ready()
+      expect(collection.at(0).get('count')).to.be.equal(1)
+      collection.countParam = 2
+      collection.resetRef()
+      await collection.ready()
+      expect(collection.at(0).get('count')).to.be.equal(2)
     })
   })
 
