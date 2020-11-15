@@ -159,6 +159,28 @@ describe('FireCollection', () => {
     })
   })
 
+  describe('ready', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should fetch data and resolves when data loaded', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection(collectionName)
+        }
+      }
+
+      const collection = new TestCollection()
+      await collection.ready()
+      expect(collection.length).to.be.equal(collectionData.length)
+    })
+  })
+
   describe('sync', () => {
     before(async () => {
       await initializeDataset()

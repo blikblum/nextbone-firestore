@@ -111,7 +111,7 @@ class FireCollection extends Collection {
     }
   }
 
-  ready(shouldListen) {
+  ready() {
     const isListening = !!this.onSnapshotUnsubscribeFn
     this.ensureRef()
     if (!isListening) {
@@ -120,14 +120,7 @@ class FireCollection extends Collection {
        * no listeners are set up, we treat ready() as a one time fetch request,
        * so data is available after awaiting the promise.
        */
-      if (shouldListen) {
-        this.observedCount++
-        this.changeLoadingState(true)
-        this.updateListeners(true)
-        this.trigger('request')
-      } else {
-        this.fetchInitialData()
-      }
+      this.fetchInitialData()
     }
     return this.readyPromise
   }
