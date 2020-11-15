@@ -16,7 +16,7 @@ class FireCollection extends Collection {
     super()
     this.isDebugEnabled = false
     this.readyPromise = Promise.resolve()
-    this.resetPromise = undefined
+    this.updateRefPromise = undefined
     this.options = optionDefaults
     this.observedCount = 0
     this.firedInitialFetch = false
@@ -55,13 +55,13 @@ class FireCollection extends Collection {
     return this._ref
   }
 
-  async resetRef() {
-    if (!this.resetPromise) {
+  async updateRef() {
+    if (!this.updateRefPromise) {
       // by default batch reset calls
-      this.resetPromise = Promise.resolve()
-      await this.resetPromise
+      this.updateRefPromise = Promise.resolve()
+      await this.updateRefPromise
       this.changeSource(this.getRef())
-      this.resetPromise = undefined
+      this.updateRefPromise = undefined
     }
     return this._ref
   }
@@ -112,8 +112,8 @@ class FireCollection extends Collection {
 
   async ready() {
     const isListening = !!this.onSnapshotUnsubscribeFn
-    if (this.resetPromise) {
-      await this.resetPromise
+    if (this.updateRefPromise) {
+      await this.updateRefPromise
     }
     this.ensureRef()
     if (!isListening) {

@@ -34,7 +34,7 @@ describe('FireCollection', () => {
     })
   })
 
-  describe('resetRef', () => {
+  describe('updateRef', () => {
     it('should call ref and return its result', async () => {
       class TestCollection extends FireCollection {
         ref() {
@@ -43,7 +43,7 @@ describe('FireCollection', () => {
       }
       const collection = new TestCollection()
       const refSpy = spy(collection, 'ref')
-      const ref = await collection.resetRef()
+      const ref = await collection.updateRef()
       expect(ref.path).to.equal('collectionPath')
       expect(refSpy).to.be.calledOnce
     })
@@ -58,7 +58,7 @@ describe('FireCollection', () => {
       const collection = new TestCollection()
       stub(collection, 'ref').returns(ref)
       const querySpy = spy(collection, 'query')
-      const resolvedRef = await collection.resetRef()
+      const resolvedRef = await collection.updateRef()
       expect(querySpy).to.be.calledOnce.and.be.calledWith(ref)
       expect(resolvedRef).to.be.instanceOf(Query)
     })
@@ -71,7 +71,7 @@ describe('FireCollection', () => {
       }
       const collection = new TestCollection()
       const querySpy = spy(collection, 'query')
-      await collection.resetRef()
+      await collection.updateRef()
       expect(querySpy).to.not.be.called
     })
 
@@ -83,8 +83,8 @@ describe('FireCollection', () => {
       }
       const collection = new TestCollection()
       const refSpy = spy(collection, 'ref')
-      collection.resetRef()
-      await collection.resetRef()
+      collection.updateRef()
+      await collection.updateRef()
       expect(refSpy).to.be.calledOnce
     })
   })
@@ -213,7 +213,7 @@ describe('FireCollection', () => {
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(1)
       collection.countParam = 2
-      collection.resetRef()
+      collection.updateRef()
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(2)
     })
@@ -249,7 +249,7 @@ describe('FireCollection', () => {
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(1)
       collection.countParam = 2
-      collection.resetRef()
+      collection.updateRef()
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(2)
     })
