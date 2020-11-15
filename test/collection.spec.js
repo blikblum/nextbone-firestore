@@ -89,6 +89,76 @@ describe('FireCollection', () => {
     })
   })
 
+  describe('observe', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should start observing for changes in collection', async () => {
+      const ref = createCollectionRef()
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+
+      const collection = new TestCollection()
+      collection.observe()
+      expect(collection.isObserved).to.be.equal(true)
+      ref.add({ x: 'y' })
+      return new Promise((resolve) => {
+        collection.once('add', (model) => {
+          expect(model.get('x')).to.equal('y')
+          expect(collection.length).to.be.equal(1)
+          collection.unobserve()
+          resolve()
+        })
+      })
+    })
+  })
+
+  describe('unobserve', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should stop observing for changes in collection', async () => {
+      let callCount = 0
+      const ref = createCollectionRef()
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+
+      const collection = new TestCollection()
+      collection.observe()
+      ref.add({ x: 'y' })
+      return new Promise((resolve) => {
+        collection.on('add', () => {
+          callCount++
+          if (callCount > 1) {
+            throw new Error('add event should not be called after unobserve')
+          } else {
+            collection.unobserve()
+            expect(collection.isObserved).to.be.equal(false)
+            ref.add({ a: 'b' }).then(() => {
+              setTimeout(resolve, 100)
+            })
+          }
+        })
+      })
+    })
+  })
+
   describe('sync', () => {
     before(async () => {
       await initializeDataset()

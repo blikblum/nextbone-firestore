@@ -31,6 +31,7 @@ class FireCollection extends Collection {
   get isObserved() {
     return this.observedCount > 0
   }
+
   get path() {
     return this._ref ? this._ref.path : undefined
   }
@@ -96,6 +97,7 @@ class FireCollection extends Collection {
     }
     this.trigger('request')
   }
+
   async addDocument(data) {
     // todo add a separated cache for ref (necessary when query is defined)
     const ref = this.ref()
@@ -108,6 +110,7 @@ class FireCollection extends Collection {
       ref.add(data)
     }
   }
+
   ready(shouldListen) {
     const isListening = !!this.onSnapshotUnsubscribeFn
     this.ensureRef()
@@ -128,6 +131,22 @@ class FireCollection extends Collection {
     }
     return this.readyPromise
   }
+
+  observe() {
+    this.observedCount++
+    if (this.observedCount === 1) {
+      this.ensureRef()
+      this.updateListeners(true)
+    }
+  }
+
+  unobserve() {
+    if (this.observedCount > 0) {
+      this.observedCount--
+      this.updateListeners(false)
+    }
+  }
+
   changeReady(isReady) {
     if (isReady) {
       const readyResolve = this.readyResolveFn
@@ -139,6 +158,7 @@ class FireCollection extends Collection {
       this.initReadyResolver()
     }
   }
+
   initReadyResolver() {
     if (!this.readyResolveFn) {
       this.readyPromise = new Promise((resolve) => {
@@ -146,6 +166,7 @@ class FireCollection extends Collection {
       })
     }
   }
+
   fetchInitialData() {
     if (this.firedInitialFetch) {
       // this.logDebug("Ignore fetch initial data");
@@ -179,6 +200,7 @@ class FireCollection extends Collection {
     }
     this.firedInitialFetch = true
   }
+
   parse(data) {
     return data
   }
