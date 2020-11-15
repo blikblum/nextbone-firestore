@@ -20,7 +20,6 @@ class FireCollection extends Collection {
     this.options = optionDefaults
     this.observedCount = 0
     this.firedInitialFetch = false
-    this._id = uniqueId('c')
     this.logDebug('FireCollection constructor')
     if (options) {
       this.options = Object.assign(Object.assign({}, optionDefaults), options)
@@ -225,9 +224,9 @@ class FireCollection extends Collection {
   logDebug(message) {
     if (this.isDebugEnabled) {
       if (this._ref) {
-        console.log(`${this._id} (${this._ref.path}) ${message} `)
+        console.log(`${this.cid} (${this._ref.path}) ${message} `)
       } else {
-        console.log(`${this._id} ${message}`)
+        console.log(`${this.cid} ${message}`)
       }
     }
   }
