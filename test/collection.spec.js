@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spy, stub } from 'sinon'
+import { match, spy, stub } from 'sinon'
 import { FireCollection } from '../src/collection'
 import {
   initializeDataset,
@@ -134,6 +134,25 @@ describe('FireCollection', () => {
       collection.observe()
       expect(collection.isLoading).to.be.equal(true)
       expect(requestSpy).to.be.calledOnce
+    })
+
+    it('should call parse', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection(collectionName).orderBy('count')
+        }
+      }
+      const collection = new TestCollection()
+      const parseSpy = spy(collection, 'parse')
+      collection.observe()
+      return new Promise((resolve) => {
+        collection.once('sync', () => {
+          expect(parseSpy).to.be.calledOnce.and.be.calledWithMatch(
+            collectionData.map((item) => match(item))
+          )
+          resolve()
+        })
+      })
     })
   })
 
@@ -278,6 +297,20 @@ describe('FireCollection', () => {
 
       expect(getSpy).to.be.calledOnce
       expect(responseData).to.be.eql(collectionData)
+    })
+
+    it('should call parse when fetching a collection', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection(collectionName).orderBy('count')
+        }
+      }
+      const collection = new TestCollection()
+      const parseSpy = spy(collection, 'parse')
+      await collection.fetch()
+      expect(parseSpy).to.be.calledOnce.and.be.calledWithMatch(
+        collectionData.map((item) => match(item))
+      )
     })
   })
 

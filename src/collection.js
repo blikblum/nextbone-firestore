@@ -199,10 +199,6 @@ class FireCollection extends Collection {
     this.firedInitialFetch = true
   }
 
-  parse(data) {
-    return data
-  }
-
   handleSnapshot(snapshot) {
     this.logDebug(
       `handleSnapshot, ${Date.now()} docs.length: ${snapshot.docs.length}`
@@ -214,7 +210,7 @@ class FireCollection extends Collection {
       }),
       id: doc.id,
     }))
-    this.set(this.parse(data))
+    this.set(data, { parse: true })
     this.changeLoadingState(false)
     this.trigger('sync')
   }
