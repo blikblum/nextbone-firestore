@@ -315,14 +315,14 @@ const refSource = (optionsOrProtoOrDescriptor, fieldName, events) => {
       if (value === oldValue) return
 
       if (value instanceof Events) {
-        this.listenTo(value, events, this.resetRef)
+        this.listenTo(value, events, this.updateRef)
       }
 
       if (oldValue instanceof Events) {
         this.stopListening(oldValue)
       }
       this[key] = value
-      this.resetRef()
+      this.updateRef()
     },
     configurable: true,
     enumerable: true,
