@@ -14,6 +14,9 @@ function hasReference(ref) {
 class FireCollection extends Collection {
   constructor(options) {
     super()
+    this._ref = undefined
+    this.sourceId = undefined
+    this.listenerSourceId = undefined
     this.isDebugEnabled = false
     this.readyPromise = Promise.resolve()
     this.updateRefPromise = undefined
