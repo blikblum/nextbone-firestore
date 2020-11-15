@@ -247,6 +247,8 @@ class FireCollection extends Collection {
     }
     if (shouldListen) {
       this.logDebug('Subscribe listeners')
+      this.changeLoadingState(true)
+      this.trigger('request')
       if (this._query) {
         this.onSnapshotUnsubscribeFn = this._query.onSnapshot(
           (snapshot) => this.handleSnapshot(snapshot),

@@ -119,6 +119,22 @@ describe('FireCollection', () => {
         })
       })
     })
+
+    it('should set isLoading and trigger request', async () => {
+      const ref = createCollectionRef()
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+
+      const collection = new TestCollection()
+      const requestSpy = spy()
+      collection.on('request', requestSpy)
+      collection.observe()
+      expect(collection.isLoading).to.be.equal(true)
+      expect(requestSpy).to.be.calledOnce
+    })
   })
 
   describe('unobserve', () => {
