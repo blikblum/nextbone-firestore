@@ -1,4 +1,5 @@
 import { expect } from 'chai'
+import { Model } from 'nextbone'
 import { match, spy, stub } from 'sinon'
 import { FireCollection } from '../src/collection'
 import {
@@ -15,6 +16,25 @@ import {
 } from './helpers/firebase'
 
 describe('FireCollection', () => {
+  it('should allow to define initial models as options.models', () => {
+    const collection = new FireCollection({
+      models: [{ a: 'b' }, { x: 'y' }],
+    })
+    expect(collection.length).to.be.equal(2)
+    expect(collection.at(0).get('a')).to.be.equal('b')
+  })
+
+  it('should pass options to Collection', () => {
+    class MyModel extends Model {}
+    const collection = new FireCollection({
+      model: MyModel,
+      comparator: 'test',
+    })
+    collection.add({ x: 'x' })
+    expect(collection.at(0)).to.be.instanceOf(MyModel)
+    expect(collection.comparator).to.be.equal('test')
+  })
+
   describe('ref', () => {
     it('should return undefined by default', () => {
       const model = new FireCollection()

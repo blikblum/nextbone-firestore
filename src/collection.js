@@ -12,22 +12,19 @@ function hasReference(ref) {
 }
 
 class FireCollection extends Collection {
-  constructor(options) {
-    super()
+  constructor({ models, ...options } = {}) {
+    super(models, options)
     this._ref = undefined
     this.sourceId = undefined
     this.listenerSourceId = undefined
     this.isDebugEnabled = false
     this.readyPromise = Promise.resolve()
     this.updateRefPromise = undefined
-    this.options = optionDefaults
     this.observedCount = 0
     this.firedInitialFetch = false
+    this.options = Object.assign(Object.assign({}, optionDefaults), options)
+    this.isDebugEnabled = options.debug || false
     this.logDebug('FireCollection constructor')
-    if (options) {
-      this.options = Object.assign(Object.assign({}, optionDefaults), options)
-      this.isDebugEnabled = options.debug || false
-    }
   }
 
   get isObserved() {
