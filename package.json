@@ -15,7 +15,7 @@
     "state"
   ],
   "type": "module",
-  "main": "dist/nextbone-firestore.js",
+  "main": "index.js",
   "peerDependencies": {
     "lodash-es": "^4.17.15",
     "nextbone": "^0.20.0"
@@ -43,8 +43,6 @@
     "lint": "eslint src test tools",
     "firebase:start": "firebase emulators:start --only firestore",
     "test": "mocha --require test/setup.js test/*.spec.js",
-    "test:watch": "mocha --watch --require esm --require test/setup.js test/*.spec.js",
-    "build": "node tools/build",
-    "prepublishOnly": "npm run build"
+    "test:watch": "mocha --watch --require esm --require test/setup.js test/*.spec.js"
   }
 }

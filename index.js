@@ -7,7 +7,7 @@
  * LICENSE.txt file in the root directory of this source tree.
  */
 
-import { FireModel } from './model'
-import { FireCollection, refSource } from './collection'
+import { FireModel } from './src/model'
+import { FireCollection, refSource } from './src/collection'
 
 export { FireModel, FireCollection, refSource }
