@@ -35,6 +35,10 @@ class FireCollection extends Collection {
     return this._ref ? this._ref.path : undefined
   }
 
+  beforeSync() {
+    // to be overriden
+  }
+
   ref() {
     // to be overriden
   }
@@ -177,12 +181,15 @@ class FireCollection extends Collection {
      * will then resolve the ready promise just like the snapshot from a
      * listener would.
      */
-    this.changeLoadingState(true )
+    this.changeLoadingState(true)
     this.trigger('request')
     
     this._ref
       .get()
-      .then((snapshot) => this.handleSnapshot(snapshot))
+      .then(async (snapshot) => {
+        await this.beforeSync()
+        this.handleSnapshot(snapshot)
+      })
       .catch((err) =>
         console.error(`Fetch initial data failed: ${err.message}`)
       )
@@ -243,7 +250,10 @@ class FireCollection extends Collection {
       this.trigger('request')
        if (this._ref) {
         this.onSnapshotUnsubscribeFn = this._ref.onSnapshot(
-          (snapshot) => this.handleSnapshot(snapshot),
+          async (snapshot) => {
+            await this.beforeSync()
+            this.handleSnapshot(snapshot)
+          },
           (err) => this.handleSnapshotError(err)
         )
       }
@@ -265,6 +275,7 @@ class FireCollection extends Collection {
   async sync() {
     const ref = this.ensureRef()
     const snapshot = await ref.get()
+    await this.beforeSync()
     const data = snapshot.docs.map((doc) => ({
       ...doc.data({
         serverTimestamps: this.options.serverTimestamps,

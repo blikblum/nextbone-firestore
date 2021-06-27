@@ -10,6 +10,10 @@ const getDocRef = (model, method) => {
 }
 
 class FireModel extends Model {
+  beforeSync() {
+    // to be overriden
+  }
+
   refRoot() {
     if (this.collection) {
       return this.collection.ref()
@@ -30,6 +34,7 @@ class FireModel extends Model {
     if (!docRef) {
       throw new Error(`FireModel: ref not defined`)
     }
+    await this.beforeSync()
     const { id, ...modelData } = this.toJSON(options)
     const data = options.attrs || modelData
     let action

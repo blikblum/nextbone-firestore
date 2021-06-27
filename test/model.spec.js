@@ -207,4 +207,41 @@ describe('FireModel', () => {
       expect(snapshot.exists).to.be.false
     })
   })
+
+  describe('beforeSync', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should be called before parse when calling fetch', async () => {
+      const beforeSyncSpy = spy()
+      const parseSpy = spy()
+      class TestModel extends FireModel {
+        ref() {
+          return db.collection(collectionName).doc('1')
+        }
+
+        async beforeSync() {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 50)
+          })
+          beforeSyncSpy()
+        }
+
+        parse() {
+          parseSpy()
+        }
+      }
+      const model = new TestModel()
+      await model.fetch()
+
+      expect(beforeSyncSpy).to.be.calledOnce
+      expect(parseSpy).to.be.calledOnce
+      expect(beforeSyncSpy).to.be.calledBefore(parseSpy)
+    })
+  })
 })

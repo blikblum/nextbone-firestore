@@ -411,6 +411,98 @@ describe('FireCollection', () => {
     })
   })
 
+  describe('beforeSync', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should be called before parse when calling fetch', async () => {
+      const beforeSyncSpy = spy()
+      const parseSpy = spy()
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection(collectionName).orderBy('count')
+        }
+
+        async beforeSync() {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 50)
+          })
+          beforeSyncSpy()
+        }
+
+        parse() {
+          parseSpy()
+        }
+      }
+      const collection = new TestCollection()
+      await collection.fetch()
+
+      expect(beforeSyncSpy).to.be.calledOnce
+      expect(parseSpy).to.be.calledOnce
+      expect(beforeSyncSpy).to.be.calledBefore(parseSpy)
+    })
+
+    it('should be called before parse when calling ready', async () => {
+      const beforeSyncSpy = spy()
+      const parseSpy = spy()
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection(collectionName).orderBy('count')
+        }
+
+        async beforeSync() {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 50)
+          })
+          beforeSyncSpy()
+        }
+
+        parse() {
+          parseSpy()
+        }
+      }
+      const collection = new TestCollection()
+      await collection.ready()
+
+      expect(beforeSyncSpy).to.be.calledOnce
+      expect(parseSpy).to.be.calledOnce
+      expect(beforeSyncSpy).to.be.calledBefore(parseSpy)
+    })
+
+    it('should be called before parse when calling observe', async () => {
+      const beforeSyncSpy = spy()
+      const parseSpy = spy()
+      class TestCollection extends FireCollection {
+        ref() {
+          return db.collection(collectionName).orderBy('count')
+        }
+
+        async beforeSync() {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 50)
+          })
+          beforeSyncSpy()
+        }
+
+        parse() {
+          parseSpy()
+        }
+      }
+      const collection = new TestCollection()
+      collection.observe()
+      await collection.ready()
+
+      expect(beforeSyncSpy).to.be.calledOnce
+      expect(parseSpy).to.be.calledOnce
+      expect(beforeSyncSpy).to.be.calledBefore(parseSpy)
+    })
+  })
+
   describe('addDocument', () => {
     it('should add a new document', async () => {
       const collectionRef = createCollectionRef()
