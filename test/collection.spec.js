@@ -223,6 +223,21 @@ describe('FireCollection', () => {
       await clearDataset()
     })
 
+    it('when ref is undefined should resolve to empty data and not call reset/update', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return undefined
+        }
+      }
+
+      const resetSpy = spy()
+      const collection = new TestCollection()
+      collection.on('update reset', resetSpy)
+      await collection.ready()
+      expect(collection.length).to.be.equal(0)
+      expect(resetSpy).to.not.be.called
+    })
+
     it('when not observing should fetch data and resolves when data loaded', async () => {
       class TestCollection extends FireCollection {
         ref() {
@@ -255,6 +270,34 @@ describe('FireCollection', () => {
       collection.updateRef()
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(2)
+    })
+
+    it('when not observing and ref is updated to undefined should resolve to empty data', async () => {
+      class TestCollection extends FireCollection {
+        countParam = 1
+
+        ref() {
+          return db.collection(collectionName)
+        }
+
+        query(ref) {
+          if (this.countParam) {
+            return ref.where('count', '==', this.countParam)
+          }
+          return undefined
+        }
+      }
+
+      const resetSpy = spy()
+      const collection = new TestCollection()
+      await collection.ready()
+      expect(collection.at(0).get('count')).to.be.equal(1)
+      collection.countParam = null
+      collection.on('reset', resetSpy)
+      collection.updateRef()
+      await collection.ready()
+      expect(collection.length).to.be.equal(0)
+      expect(resetSpy).to.be.calledOnce
     })
 
     it('when observing should resolve when data loaded', async () => {
@@ -291,6 +334,32 @@ describe('FireCollection', () => {
       collection.updateRef()
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(2)
+    })
+
+    it('when observing and ref is updated to undefined should resolve with empty data', async () => {
+      class TestCollection extends FireCollection {
+        countParam = 1
+
+        ref() {
+          return db.collection(collectionName)
+        }
+
+        query(ref) {
+          if (this.countParam) {
+            return ref.where('count', '==', this.countParam)
+          }
+          return undefined
+        }
+      }
+
+      const collection = new TestCollection()
+      collection.observe()
+      await collection.ready()
+      expect(collection.at(0).get('count')).to.be.equal(1)
+      collection.countParam = null
+      collection.updateRef()
+      await collection.ready()
+      expect(collection.length).to.be.equal(0)
     })
   })
 

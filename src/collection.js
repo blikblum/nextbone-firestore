@@ -168,7 +168,8 @@ class FireCollection extends Collection {
       return
     }
     if (!this._ref) {
-      throw Error('Can not fetch data without a collection reference')
+      this.set([])
+      return
     }
     this.logDebug('Fetch initial data')
     /**
