@@ -1,4 +1,4 @@
-import { db, clearFirestoreData } from './firebase'
+import { db, clearFirestoreData } from './firebase.js'
 
 export const collectionName = 'someCollection'
 export const collectionData = [

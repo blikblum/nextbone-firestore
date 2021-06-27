@@ -1,13 +1,19 @@
 import { expect } from 'chai'
-import { spy, stub } from 'sinon'
-import { FireModel } from '../src/model'
+import sinon from 'sinon'
+import { FireModel } from '../src/model.js'
 import {
   initializeDataset,
   clearDataset,
   collectionName,
   collectionData,
-} from './helpers/dataset'
-import { db, CollectionReference, DocumentReference } from './helpers/firebase'
+} from './helpers/dataset.js'
+import {
+  db,
+  CollectionReference,
+  DocumentReference,
+} from './helpers/firebase.js'
+
+const { spy, stub } = sinon
 
 describe('FireModel', () => {
   describe('refRoot', () => {

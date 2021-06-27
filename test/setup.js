@@ -1,11 +1,11 @@
-var chai = require('chai')
-var sinonChai = require('sinon-chai')
-var { app } = require('./helpers/firebase')
+import chai from 'chai'
+import sinonChai from 'sinon-chai'
+import { app } from './helpers/firebase.js'
 
-exports.mochaGlobalSetup = async function () {
+export async function mochaGlobalSetup() {
   chai.use(sinonChai)
 }
 
-exports.mochaGlobalTeardown = async function () {
+export async function mochaGlobalTeardown() {
   app.delete()
 }

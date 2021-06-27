@@ -1,6 +1,6 @@
 import { Collection, Events } from 'nextbone'
 import { uniqueId } from 'lodash-es'
-import { FireModel } from './model'
+import { FireModel } from './model.js'
 import { isOnline } from './utils.js'
 
 const optionDefaults = {
@@ -177,23 +177,16 @@ class FireCollection extends Collection {
      * will then resolve the ready promise just like the snapshot from a
      * listener would.
      */
-    this.changeLoadingState(true)
+    this.changeLoadingState(true )
     this.trigger('request')
-    if (this._query) {
-      this._query
-        .get()
-        .then((snapshot) => this.handleSnapshot(snapshot))
-        .catch((err) =>
-          console.error(`Fetch initial data failed: ${err.message}`)
-        )
-    } else {
-      this._ref
-        .get()
-        .then((snapshot) => this.handleSnapshot(snapshot))
-        .catch((err) =>
-          console.error(`Fetch initial data failed: ${err.message}`)
-        )
-    }
+    
+    this._ref
+      .get()
+      .then((snapshot) => this.handleSnapshot(snapshot))
+      .catch((err) =>
+        console.error(`Fetch initial data failed: ${err.message}`)
+      )
+    
     this.firedInitialFetch = true
   }
 
@@ -248,12 +241,7 @@ class FireCollection extends Collection {
       this.logDebug('Subscribe listeners')
       this.changeLoadingState(true)
       this.trigger('request')
-      if (this._query) {
-        this.onSnapshotUnsubscribeFn = this._query.onSnapshot(
-          (snapshot) => this.handleSnapshot(snapshot),
-          (err) => this.handleSnapshotError(err)
-        )
-      } else if (this._ref) {
+       if (this._ref) {
         this.onSnapshotUnsubscribeFn = this._ref.onSnapshot(
           (snapshot) => this.handleSnapshot(snapshot),
           (err) => this.handleSnapshotError(err)

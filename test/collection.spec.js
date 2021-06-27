@@ -1,19 +1,21 @@
 import { expect } from 'chai'
 import { Model } from 'nextbone'
-import { match, spy, stub } from 'sinon'
-import { FireCollection } from '../src/collection'
+import sinon from 'sinon'
+import { FireCollection } from '../src/collection.js'
 import {
   initializeDataset,
   clearDataset,
   collectionName,
   collectionData,
-} from './helpers/dataset'
+} from './helpers/dataset.js'
 import {
   db,
   CollectionReference,
   createCollectionRef,
   Query,
-} from './helpers/firebase'
+} from './helpers/firebase.js'
+
+const { match, spy, stub } = sinon
 
 describe('FireCollection', () => {
   it('should allow to define initial models as options.models', () => {
