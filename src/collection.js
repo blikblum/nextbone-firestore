@@ -91,7 +91,7 @@ class FireCollection extends Collection {
         this.logDebug('Change collection -> clear listeners')
         this.updateListeners(false)
       }
-      this.reset([])
+      this.set([])
       this.changeLoadingState(false)
     }
     this.trigger('request')

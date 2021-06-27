@@ -289,15 +289,21 @@ describe('FireCollection', () => {
       }
 
       const resetSpy = spy()
+      const removeSpy = spy()
+      const updateSpy = spy()
       const collection = new TestCollection()
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(1)
       collection.countParam = null
       collection.on('reset', resetSpy)
+      collection.on('remove', removeSpy)
+      collection.on('update', updateSpy)
       collection.updateRef()
       await collection.ready()
       expect(collection.length).to.be.equal(0)
-      expect(resetSpy).to.be.calledOnce
+      expect(resetSpy).to.not.be.called
+      expect(removeSpy).to.be.called
+      expect(updateSpy).to.be.called
     })
 
     it('when observing should resolve when data loaded', async () => {
