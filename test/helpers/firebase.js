@@ -1,5 +1,18 @@
-import * as firebase from '@firebase/rules-unit-testing'
+import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+  RulesTestEnvironment,
+} from '@firebase/rules-unit-testing'
+
 import { uniqueId } from 'lodash-es'
+
+let testEnv = await initializeTestEnvironment({
+  projectId: 'demo-project-1234',
+  firestore: {
+    rules: fs.readFileSync('firestore.rules', 'utf8'),
+  },
+})
 
 export const app = firebase.initializeTestApp({
   projectId: 'nextbone-firestore-test',
