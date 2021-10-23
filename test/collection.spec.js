@@ -8,16 +8,29 @@ import {
   collectionName,
   collectionData,
 } from './helpers/dataset.js'
+
+import { getDb, createCollectionRef } from './helpers/firebase.js'
+
 import {
-  db,
+  collection as createCollection,
+  query,
+  where,
+  orderBy,
+  addDoc,
+  getDocs,
   CollectionReference,
-  createCollectionRef,
   Query,
-} from './helpers/firebase.js'
+} from 'firebase/firestore'
 
 const { match, spy, stub } = sinon
 
 describe('FireCollection', () => {
+  let db
+
+  before(async () => {
+    db = await getDb()
+  })
+
   it('should allow to define initial models as options.models', () => {
     const collection = new FireCollection({
       models: [{ a: 'b' }, { x: 'y' }],
@@ -46,7 +59,7 @@ describe('FireCollection', () => {
     it('should return the declared ref', () => {
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection('collectionPath')
+          return createCollection(db, 'collectionPath')
         }
       }
       const collection = new TestCollection()
@@ -60,7 +73,7 @@ describe('FireCollection', () => {
     it('should call ref and return its result', async () => {
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection('collectionPath')
+          return createCollection(db, 'collectionPath')
         }
       }
       const collection = new TestCollection()
@@ -71,10 +84,10 @@ describe('FireCollection', () => {
     })
 
     it('should call query with return from ref', async () => {
-      const ref = db.collection('collectionPath')
+      const ref = createCollection(db, 'collectionPath')
       class TestCollection extends FireCollection {
         query(ref) {
-          return ref.orderBy('name')
+          return query(ref, orderBy('name'))
         }
       }
       const collection = new TestCollection()
@@ -88,7 +101,7 @@ describe('FireCollection', () => {
     it('should not call query when ref returns undefined', async () => {
       class TestCollection extends FireCollection {
         query(ref) {
-          return ref.orderBy('name')
+          return query(ref, orderBy('name'))
         }
       }
       const collection = new TestCollection()
@@ -100,7 +113,7 @@ describe('FireCollection', () => {
     it('should call ref only once when called in same microtask', async () => {
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection('collectionPath')
+          return createCollection(db, 'collectionPath')
         }
       }
       const collection = new TestCollection()
@@ -121,7 +134,7 @@ describe('FireCollection', () => {
     })
 
     it('should start observing for changes in collection', async () => {
-      const ref = createCollectionRef()
+      const ref = createCollectionRef(db)
       class TestCollection extends FireCollection {
         ref() {
           return ref
@@ -131,7 +144,7 @@ describe('FireCollection', () => {
       const collection = new TestCollection()
       collection.observe()
       expect(collection.isObserved).to.be.equal(true)
-      ref.add({ x: 'y' })
+      addDoc(ref, { x: 'y' })
       return new Promise((resolve) => {
         collection.once('add', (model) => {
           expect(model.get('x')).to.equal('y')
@@ -143,7 +156,7 @@ describe('FireCollection', () => {
     })
 
     it('should set isLoading and trigger request', async () => {
-      const ref = createCollectionRef()
+      const ref = createCollectionRef(db)
       class TestCollection extends FireCollection {
         ref() {
           return ref
@@ -160,8 +173,12 @@ describe('FireCollection', () => {
 
     it('should call parse', async () => {
       class TestCollection extends FireCollection {
+        query(ref) {
+          return query(ref, orderBy('count'))
+        }
+
         ref() {
-          return db.collection(collectionName).orderBy('count')
+          return createCollection(db, collectionName)
         }
       }
       const collection = new TestCollection()
@@ -189,7 +206,7 @@ describe('FireCollection', () => {
 
     it('should stop observing for changes in collection', async () => {
       let callCount = 0
-      const ref = createCollectionRef()
+      const ref = createCollectionRef(db)
       class TestCollection extends FireCollection {
         ref() {
           return ref
@@ -198,7 +215,7 @@ describe('FireCollection', () => {
 
       const collection = new TestCollection()
       collection.observe()
-      ref.add({ x: 'y' })
+      addDoc(ref, { x: 'y' })
       return new Promise((resolve) => {
         collection.on('add', () => {
           callCount++
@@ -243,7 +260,7 @@ describe('FireCollection', () => {
     it('when not observing should fetch data and resolves when data loaded', async () => {
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection(collectionName)
+          return createCollection(db, collectionName)
         }
       }
 
@@ -257,11 +274,11 @@ describe('FireCollection', () => {
         countParam = 1
 
         ref() {
-          return db.collection(collectionName)
+          return createCollection(db, collectionName)
         }
 
         query(ref) {
-          return ref.where('count', '==', this.countParam)
+          return query(ref, where('count', '==', this.countParam))
         }
       }
 
@@ -279,12 +296,12 @@ describe('FireCollection', () => {
         countParam = 1
 
         ref() {
-          return db.collection(collectionName)
+          return createCollection(db, collectionName)
         }
 
         query(ref) {
           if (this.countParam) {
-            return ref.where('count', '==', this.countParam)
+            return query(ref, where('count', '==', this.countParam))
           }
           return undefined
         }
@@ -311,7 +328,7 @@ describe('FireCollection', () => {
     it('when observing should resolve when data loaded', async () => {
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection(collectionName)
+          return createCollection(db, collectionName)
         }
       }
 
@@ -326,11 +343,11 @@ describe('FireCollection', () => {
         countParam = 1
 
         ref() {
-          return db.collection(collectionName)
+          return createCollection(db, collectionName)
         }
 
         query(ref) {
-          return ref.where('count', '==', this.countParam)
+          return query(ref, where('count', '==', this.countParam))
         }
       }
 
@@ -349,12 +366,12 @@ describe('FireCollection', () => {
         countParam = 1
 
         ref() {
-          return db.collection(collectionName)
+          return createCollection(db, collectionName)
         }
 
         query(ref) {
           if (this.countParam) {
-            return ref.where('count', '==', this.countParam)
+            return query(ref, where('count', '==', this.countParam))
           }
           return undefined
         }
@@ -380,10 +397,13 @@ describe('FireCollection', () => {
       await clearDataset()
     })
 
-    it('should call ref get when fetching a collection', async () => {
-      const collectionRef = db.collection(collectionName).orderBy('count')
-      const getSpy = spy(collectionRef, 'get')
+    it('should get docs when fetching a collection', async () => {
+      const collectionRef = createCollection(db, collectionName)
       class TestCollection extends FireCollection {
+        query(ref) {
+          return query(ref, orderBy('count'))
+        }
+
         ref() {
           return collectionRef
         }
@@ -392,14 +412,13 @@ describe('FireCollection', () => {
       await collection.fetch()
       const responseData = collection.map((model) => model.omit('id'))
 
-      expect(getSpy).to.be.calledOnce
       expect(responseData).to.be.eql(collectionData)
     })
 
     it('should call parse when fetching a collection', async () => {
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection(collectionName).orderBy('count')
+          return query(createCollection(db, collectionName), orderBy('count'))
         }
       }
       const collection = new TestCollection()
@@ -425,7 +444,7 @@ describe('FireCollection', () => {
       const parseSpy = spy()
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection(collectionName).orderBy('count')
+          return query(createCollection(db, collectionName), orderBy('count'))
         }
 
         async beforeSync() {
@@ -452,7 +471,7 @@ describe('FireCollection', () => {
       const parseSpy = spy()
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection(collectionName).orderBy('count')
+          return query(createCollection(db, collectionName), orderBy('count'))
         }
 
         async beforeSync() {
@@ -479,7 +498,7 @@ describe('FireCollection', () => {
       const parseSpy = spy()
       class TestCollection extends FireCollection {
         ref() {
-          return db.collection(collectionName).orderBy('count')
+          return query(createCollection(db, collectionName), orderBy('count'))
         }
 
         async beforeSync() {
@@ -505,8 +524,8 @@ describe('FireCollection', () => {
 
   describe('addDocument', () => {
     it('should add a new document', async () => {
-      const collectionRef = createCollectionRef()
-      const addSpy = spy(collectionRef, 'add')
+      const collectionRef = createCollectionRef(db)
+
       class TestCollection extends FireCollection {
         ref() {
           return collectionRef
@@ -515,8 +534,7 @@ describe('FireCollection', () => {
       const collection = new TestCollection()
 
       await collection.addDocument({ foo: 'bar' })
-      const snapshot = await collectionRef.get()
-      expect(addSpy).to.be.calledOnce
+      const snapshot = await getDocs(collectionRef)
       expect(snapshot.docs.length).to.be.equal(1)
       expect(snapshot.docs[0].data()).to.be.eql({ foo: 'bar' })
     })

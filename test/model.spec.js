@@ -18,7 +18,7 @@ import {
   CollectionReference,
 } from 'firebase/firestore'
 
-const { spy, stub } = sinon
+const { spy } = sinon
 
 describe('FireModel', () => {
   let db

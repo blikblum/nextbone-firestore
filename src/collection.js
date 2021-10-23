@@ -2,6 +2,7 @@ import { Collection, Events } from 'nextbone'
 import { uniqueId } from 'lodash-es'
 import { FireModel } from './model.js'
 import { isOnline } from './utils.js'
+import { getDocs, addDoc, onSnapshot } from 'firebase/firestore'
 
 const optionDefaults = {
   serverTimestamps: 'estimate',
@@ -108,9 +109,9 @@ class FireCollection extends Collection {
       throw new Error(`Can not add a document to a collection that has no ref`)
     }
     if (isOnline()) {
-      await ref.add(data)
+      await addDoc(ref, data)
     } else {
-      ref.add(data)
+      addDoc(ref, data)
     }
   }
 
@@ -183,9 +184,8 @@ class FireCollection extends Collection {
      */
     this.changeLoadingState(true)
     this.trigger('request')
-    
-    this._ref
-      .get()
+
+    getDocs(this._ref)
       .then(async (snapshot) => {
         await this.beforeSync()
         this.handleSnapshot(snapshot)
@@ -193,7 +193,7 @@ class FireCollection extends Collection {
       .catch((err) =>
         console.error(`Fetch initial data failed: ${err.message}`)
       )
-    
+
     this.firedInitialFetch = true
   }
 
@@ -248,8 +248,9 @@ class FireCollection extends Collection {
       this.logDebug('Subscribe listeners')
       this.changeLoadingState(true)
       this.trigger('request')
-       if (this._ref) {
-        this.onSnapshotUnsubscribeFn = this._ref.onSnapshot(
+      if (this._ref) {
+        this.onSnapshotUnsubscribeFn = onSnapshot(
+          this._ref,
           async (snapshot) => {
             await this.beforeSync()
             this.handleSnapshot(snapshot)
@@ -274,7 +275,7 @@ class FireCollection extends Collection {
 
   async sync() {
     const ref = this.ensureRef()
-    const snapshot = await ref.get()
+    const snapshot = await getDocs(ref)
     await this.beforeSync()
     const data = snapshot.docs.map((doc) => ({
       ...doc.data({
@@ -321,12 +322,8 @@ const refSource = (optionsOrProtoOrDescriptor, fieldName, events) => {
     enumerable: true,
   }
   if (!isLegacy) {
-    const {
-      kind,
-      placement,
-      descriptor,
-      initializer,
-    } = optionsOrProtoOrDescriptor
+    const { kind, placement, descriptor, initializer } =
+      optionsOrProtoOrDescriptor
     return {
       kind,
       placement,

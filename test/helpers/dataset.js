@@ -1,4 +1,4 @@
-import { doc, setDoc, collection } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 import { clearFirestoreData, getDb } from './firebase.js'
 
 export const collectionName = 'someCollection'
