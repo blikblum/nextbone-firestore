@@ -39,7 +39,7 @@
     "lint": "eslint src test",
     "firebase:start": "firebase emulators:start --only firestore",
     "test": "mocha --require test/setup.js test/*.spec.js",
-    "test:watch": "mocha --watch --require esm --require test/setup.js test/*.spec.js"
+    "test:watch": "mocha --watch --require test/setup.js test/*.spec.js"
   },
   "files": [
     "index.js",

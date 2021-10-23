@@ -1,32 +1,42 @@
-import {
-  assertFails,
-  assertSucceeds,
-  initializeTestEnvironment,
-  RulesTestEnvironment,
-} from '@firebase/rules-unit-testing'
-
+import { collection } from 'firebase/firestore'
+import { initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { uniqueId } from 'lodash-es'
 
-let testEnv = await initializeTestEnvironment({
-  projectId: 'demo-project-1234',
-  firestore: {
-    rules: fs.readFileSync('firestore.rules', 'utf8'),
-  },
-})
+let globalTestEnv
 
-export const app = firebase.initializeTestApp({
-  projectId: 'nextbone-firestore-test',
-  auth: { uid: 'alice', email: 'alice@example.com' },
-})
-
-export const createCollectionRef = () => {
-  return db.collection(uniqueId('collection'))
+async function getTestEnv() {
+  if (globalTestEnv) return globalTestEnv
+  globalTestEnv = await initializeTestEnvironment({
+    projectId: 'nextbone-firestore-test',
+    firestore: {
+      host: 'localhost',
+      port: 8080,
+      // rules: fs.readFileSync('firestore.rules', 'utf8'),
+    },
+  })
+  return globalTestEnv
 }
 
-export const db = app.firestore()
-export const FieldValue = firebase.firestore.FieldValue
-export const Timestamp = firebase.firestore.Timestamp
-export const Query = firebase.firestore.Query
-export const DocumentReference = firebase.firestore.DocumentReference
-export const CollectionReference = firebase.firestore.CollectionReference
-export const clearFirestoreData = firebase.clearFirestoreData
+async function getTestContext() {
+  const testEnv = await getTestEnv()
+  return testEnv.authenticatedContext('alice', { email: 'alice@example.com' })
+}
+
+export const createCollectionRef = (db) => {
+  return collection(db, uniqueId('collection'))
+}
+
+export const getDb = async () => {
+  const context = await getTestContext()
+  return context.firestore()
+}
+
+export const clearFirestoreData = async () => {
+  const testEnv = await getTestEnv()
+  testEnv.clearFirestore()
+}
+
+export const cleanup = async () => {
+  const testEnv = await getTestEnv()
+  testEnv.cleanup()
+}

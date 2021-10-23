@@ -1,10 +1,11 @@
+import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { Model } from 'nextbone'
 import { isOnline } from './utils.js'
 
 const getDocRef = (model, method) => {
   if (method === 'create') {
     const refRoot = model.refRoot()
-    return refRoot ? refRoot.doc() : undefined
+    return refRoot ? doc(refRoot) : undefined
   }
   return model.ref()
 }
@@ -23,7 +24,7 @@ class FireModel extends Model {
   ref() {
     const refRoot = this.refRoot()
     if (refRoot && !this.isNew()) {
-      return refRoot.doc(this.id)
+      return doc(refRoot, this.id)
     }
     return refRoot
   }
@@ -41,18 +42,18 @@ class FireModel extends Model {
     let response = modelData
     switch (method) {
       case 'read':
-        const snapshot = await docRef.get()
+        const snapshot = await getDoc(docRef)
         response = { ...snapshot.data(), id: docRef.id }
         break
       case 'create':
       case 'update':
-        action = docRef.set(data)
+        action = setDoc(docRef, data)
         break
       case 'patch':
-        action = docRef.update(data)
+        action = updateDoc(docRef, data)
         break
       case 'delete':
-        action = docRef.delete()
+        action = deleteDoc(docRef)
         break
       default:
         throw new Error(`FireModel: unrecognized sync method: "${method}"`)

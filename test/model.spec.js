@@ -7,15 +7,26 @@ import {
   collectionName,
   collectionData,
 } from './helpers/dataset.js'
+import { getDb } from './helpers/firebase.js'
+
 import {
-  db,
-  CollectionReference,
+  doc,
+  collection,
+  getDoc,
+  getDocs,
   DocumentReference,
-} from './helpers/firebase.js'
+  CollectionReference,
+} from 'firebase/firestore'
 
 const { spy, stub } = sinon
 
 describe('FireModel', () => {
+  let db
+
+  before(async () => {
+    db = await getDb()
+  })
+
   describe('refRoot', () => {
     it('should return undefined by default', () => {
       const model = new FireModel()
@@ -25,7 +36,7 @@ describe('FireModel', () => {
     it('should return the declared ref', () => {
       class TestModel extends FireModel {
         refRoot() {
-          return db.collection('collectionPath').doc('modelId')
+          return doc(db, 'collectionPath/modelId')
         }
       }
       const model = new TestModel()
@@ -36,7 +47,7 @@ describe('FireModel', () => {
 
     it('should return its collection ref', () => {
       const model = new FireModel()
-      model.collection = { ref: () => db.collection('mycollection') }
+      model.collection = { ref: () => collection(db, 'mycollection') }
       const ref = model.refRoot()
       expect(ref).to.be.instanceOf(CollectionReference)
       expect(ref.path).to.equal('mycollection')
@@ -52,7 +63,7 @@ describe('FireModel', () => {
     it('should return refRoot if declared', () => {
       class TestModel extends FireModel {
         refRoot() {
-          return db.collection('collectionPath')
+          return collection(db, 'collectionPath')
         }
       }
       const model = new TestModel()
@@ -64,7 +75,7 @@ describe('FireModel', () => {
     it('should return the declared ref', () => {
       class TestModel extends FireModel {
         ref() {
-          return db.collection('collectionPath').doc('modelId')
+          return doc(db, 'collectionPath/modelId')
         }
       }
       const model = new TestModel()
@@ -76,7 +87,7 @@ describe('FireModel', () => {
     it('should return a doc ref children of refRoot when is not new', () => {
       class TestModel extends FireModel {
         refRoot() {
-          return db.collection('collectionPath')
+          return collection(db, 'collectionPath')
         }
       }
       const model = new TestModel({ id: 'xyz' })
@@ -95,27 +106,19 @@ describe('FireModel', () => {
       await clearDataset()
     })
 
-    it('should call refRoot.get when fetching a model', async () => {
-      const docRef = db.collection(collectionName).doc('1')
-      const getSpy = spy(docRef, 'get')
-
+    it('should fetch a model using a doc ref', async () => {
       class TestModel extends FireModel {
         ref() {
-          return docRef
+          return doc(db, `${collectionName}/1`)
         }
       }
       const model = new TestModel()
       await model.fetch()
-      expect(getSpy).to.be.calledOnce
       expect(model.attributes).to.be.eql({ id: '1', ...collectionData[0] })
     })
 
-    it('should create a doc ref and call its set with when saving new model', async () => {
-      const collectionRef = db.collection('myCollection1')
-      const docRef = collectionRef.doc()
-      const docStub = stub(collectionRef, 'doc')
-      const setSpy = spy(docRef, 'set')
-      docStub.returns(docRef)
+    it('should create a doc when saving new model', async () => {
+      const collectionRef = collection(db, 'myCollection1')
 
       class TestModel extends FireModel {
         refRoot() {
@@ -124,20 +127,18 @@ describe('FireModel', () => {
       }
       const model = new TestModel({ foo: 'bar', test: 'a' })
       await model.save()
-      const snapshot = await collectionRef.get()
-      expect(docStub).to.be.calledOnce
-      expect(setSpy).to.be.calledOnceWithExactly({ foo: 'bar', test: 'a' })
+      const snapshot = await getDocs(collectionRef)
+      const firstDoc = snapshot.docs[0]
       expect(model.attributes).to.be.eql({
-        id: docRef.id,
+        id: firstDoc.id,
         foo: 'bar',
         test: 'a',
       })
-      expect(snapshot.docs[0].data()).to.eql({ foo: 'bar', test: 'a' })
+      expect(firstDoc.data()).to.eql({ foo: 'bar', test: 'a' })
     })
 
-    it('should call ref.set with merged attributes when saving existing model', async () => {
-      const docRef = db.collection('myCollection2').doc('x')
-      const setSpy = spy(docRef, 'set')
+    it('should use merged attributes when saving existing model', async () => {
+      const docRef = doc(db, 'myCollection2', 'x')
 
       class TestModel extends FireModel {
         ref() {
@@ -146,12 +147,8 @@ describe('FireModel', () => {
       }
       const model = new TestModel({ id: 'x', foo: 'bar', test: 'a' })
       await model.save({ foo: 'y' })
-      const snapshot = await docRef.get()
+      const snapshot = await getDoc(docRef)
 
-      expect(setSpy).to.be.calledOnceWithExactly({
-        foo: 'y',
-        test: 'a',
-      })
       expect(model.attributes).to.be.eql({
         id: 'x',
         foo: 'y',
@@ -163,9 +160,8 @@ describe('FireModel', () => {
       })
     })
 
-    it('should call ref.update with passed attrs when saving existing model with patch', async () => {
-      const docRef = db.collection('myCollection3').doc('x')
-      const updateSpy = spy(docRef, 'update')
+    it('should update doc with passed attrs when saving existing model with patch', async () => {
+      const docRef = doc(db, 'myCollection3', 'x')
 
       class TestModel extends FireModel {
         ref() {
@@ -175,8 +171,7 @@ describe('FireModel', () => {
       const model = new TestModel({ id: 'x' })
       await model.save({ foo: 'bar', test: 'a' })
       await model.save({ foo: 'y' }, { patch: true })
-      const snapshot = await docRef.get()
-      expect(updateSpy).to.be.calledOnceWithExactly({ foo: 'y' })
+      const snapshot = await getDoc(docRef)
       expect(model.attributes).to.be.eql({
         id: 'x',
         foo: 'y',
@@ -188,9 +183,8 @@ describe('FireModel', () => {
       })
     })
 
-    it('should call ref.delete when destroying a model', async () => {
-      const docRef = db.collection('myCollection4').doc('x')
-      const deleteSpy = spy(docRef, 'delete')
+    it('should delete doc when destroying a model', async () => {
+      const docRef = doc(db, 'myCollection4', 'x')
 
       class TestModel extends FireModel {
         ref() {
@@ -199,12 +193,11 @@ describe('FireModel', () => {
       }
       const model = new TestModel({ id: 'x' })
       await model.save({ foo: 'bar', test: 'a' })
-      let snapshot = await docRef.get()
-      expect(snapshot.exists).to.be.true
+      let snapshot = await getDoc(docRef)
+      expect(snapshot.exists()).to.be.true
       await model.destroy()
-      snapshot = await docRef.get()
-      expect(deleteSpy).to.be.calledOnce
-      expect(snapshot.exists).to.be.false
+      snapshot = await getDoc(docRef)
+      expect(snapshot.exists()).to.be.false
     })
   })
 
@@ -222,7 +215,7 @@ describe('FireModel', () => {
       const parseSpy = spy()
       class TestModel extends FireModel {
         ref() {
-          return db.collection(collectionName).doc('1')
+          return doc(db, collectionName, '1')
         }
 
         async beforeSync() {
