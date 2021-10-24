@@ -124,6 +124,52 @@ describe('FireCollection', () => {
     })
   })
 
+  describe('params', () => {
+    it('should return an empty object by default', () => {
+      class TestCollection extends FireCollection {}
+
+      const collection = new TestCollection()
+      expect(collection.params).to.deep.equal({})
+    })
+
+    it('should call updateRef when setting to a new object', () => {
+      class TestCollection extends FireCollection {}
+
+      const collection = new TestCollection()
+      const updateRefSpy = spy(collection, 'updateRef')
+      collection.params = { test: 'x' }
+
+      expect(updateRefSpy).to.be.calledOnce
+    })
+
+    it('should call updateRef when changing one of its properties', () => {
+      class TestCollection extends FireCollection {}
+
+      const collection = new TestCollection()
+      const updateRefSpy = spy(collection, 'updateRef')
+
+      collection.params.test = 'x'
+
+      expect(updateRefSpy).to.be.calledOnce
+    })
+
+    it('should be passed to ref and query as a param', async () => {
+      const ref = createCollection(db, 'collectionPath')
+      class TestCollection extends FireCollection {}
+
+      const collection = new TestCollection()
+      const refSpy = stub(collection, 'ref').returns(ref)
+      const querySpy = spy(collection, 'query')
+
+      collection.params.test = 'x'
+
+      await collection.ready()
+
+      expect(refSpy).to.be.calledWith(collection.params)
+      expect(querySpy).to.be.calledWith(ref, collection.params)
+    })
+  })
+
   describe('observe', () => {
     before(async () => {
       await initializeDataset()

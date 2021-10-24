@@ -12,10 +12,22 @@ function hasReference(ref) {
   return !!ref
 }
 
+const createParamsProxy = (params, instance) => {
+  return new Proxy(params, {
+    set(target, prop, value) {
+      target[prop] = value
+      instance.updateRef()
+      return true
+    },
+  })
+}
+
 class FireCollection extends Collection {
   constructor({ models, ...options } = {}) {
     super(models, options)
     this._ref = undefined
+    this._params = {}
+    this._paramsProxy = createParamsProxy(this._params, this)
     this.sourceId = undefined
     this.listenerSourceId = undefined
     this.isDebugEnabled = false
@@ -36,6 +48,20 @@ class FireCollection extends Collection {
     return this._ref ? this._ref.path : undefined
   }
 
+  get params() {
+    return this._paramsProxy
+  }
+
+  set params(value) {
+    if (!value || typeof value !== 'object') {
+      throw new Error(`FireCollection: params should be an object`)
+    }
+
+    this._params = value
+    this._paramsProxy = createParamsProxy(value, this)
+    this.updateRef()
+  }
+
   beforeSync() {
     // to be overriden
   }
@@ -49,8 +75,8 @@ class FireCollection extends Collection {
   }
 
   getRef() {
-    const ref = this.ref()
-    return ref ? this.query(ref) : ref
+    const ref = this.ref(this._params)
+    return ref ? this.query(ref, this._params) : ref
   }
 
   ensureRef() {
