@@ -12,7 +12,6 @@
         "999999",
         "--colors",
         "--require",
-        "esm",
         "${workspaceFolder}/test/setup.js",
         "${workspaceFolder}/test/*.spec.js"
       ],
@@ -22,8 +21,8 @@
       "request": "launch",
       "skipFiles": [
         "<node_internals>/**"
-      ],      
-      "type": "node"   
+      ],
+      "type": "node"
     },
   ]
 }
