@@ -4,11 +4,13 @@
     "prettier"
   ],
   "parserOptions": {
-    "ecmaVersion": 2019,
+    "ecmaVersion": "latest",
     "sourceType": "module"
   },
   "env": {
-    "es6": true
+    "es6": true,
+    "es2021": true,
+    "node": true
   },
   "overrides": [
     {
