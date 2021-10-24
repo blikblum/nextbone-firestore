@@ -1,4 +1,4 @@
-import { Collection, Events } from 'nextbone'
+import { Collection } from 'nextbone'
 import { uniqueId } from 'lodash-es'
 import { FireModel } from './model.js'
 import { isOnline } from './utils.js'
