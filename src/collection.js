@@ -8,9 +8,6 @@ const optionDefaults = {
   serverTimestamps: 'estimate',
   debug: false,
 }
-function hasReference(ref) {
-  return !!ref
-}
 
 const createParamsProxy = (params, instance) => {
   return new Proxy(params, {
@@ -30,14 +27,12 @@ class FireCollection extends Collection {
     this._paramsProxy = createParamsProxy(this._params, this)
     this.sourceId = undefined
     this.listenerSourceId = undefined
-    this.isDebugEnabled = false
     this.readyPromise = Promise.resolve()
     this.updateRefPromise = undefined
     this.observedCount = 0
     this.firedInitialFetch = false
     this.options = Object.assign(Object.assign({}, optionDefaults), options)
     this.isDebugEnabled = options.debug || false
-    this.logDebug('FireCollection constructor')
   }
 
   get isObserved() {
@@ -109,7 +104,7 @@ class FireCollection extends Collection {
     this.logDebug(`Change source to ${newRef ? newRef.path : undefined}`)
     this.firedInitialFetch = false
     this._ref = newRef
-    if (hasReference(newRef)) {
+    if (newRef) {
       this.logDebug('Setting new ref source')
       this.sourceId = uniqueId('s')
       if (this.isObserved) {
@@ -129,9 +124,9 @@ class FireCollection extends Collection {
   }
 
   async addDocument(data) {
-    // todo add a separated cache for ref (necessary when query is defined)
+    // todo: add a separated cache for ref (necessary when query is defined) ?
     const ref = this.ref()
-    if (!hasReference(ref)) {
+    if (!ref) {
       throw new Error(`Can not add a document to a collection that has no ref`)
     }
     if (isOnline()) {
@@ -266,7 +261,7 @@ class FireCollection extends Collection {
     }
     if (isListening) {
       this.logDebug('Unsubscribe listeners')
-      this.onSnapshotUnsubscribeFn && this.onSnapshotUnsubscribeFn()
+      this.onSnapshotUnsubscribeFn()
       this.onSnapshotUnsubscribeFn = undefined
       this.listenerSourceId = undefined
     }
@@ -289,8 +284,7 @@ class FireCollection extends Collection {
   }
 
   changeLoadingState(isLoading) {
-    const wasLoading = this.isLoading
-    if (wasLoading === isLoading) {
+    if (this.isLoading === isLoading) {
       // this.logDebug(`Ignore change loading state: ${isLoading}`);
       return
     }
