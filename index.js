@@ -8,6 +8,6 @@
  */
 
 import { FireModel } from './src/model.js'
-import { FireCollection, refSource } from './src/collection.js'
+import { FireCollection } from './src/collection.js'
 
-export { FireModel, FireCollection, refSource }
+export { FireModel, FireCollection }
