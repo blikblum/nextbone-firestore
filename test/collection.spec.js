@@ -224,7 +224,7 @@ describe('FireCollection', () => {
           } else {
             collection.unobserve()
             expect(collection.isObserved).to.be.equal(false)
-            ref.add({ a: 'b' }).then(() => {
+            addDoc(ref, { a: 'b' }).then(() => {
               setTimeout(resolve, 100)
             })
           }

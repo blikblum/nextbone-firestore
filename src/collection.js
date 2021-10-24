@@ -2,7 +2,7 @@ import { Collection, Events } from 'nextbone'
 import { uniqueId } from 'lodash-es'
 import { FireModel } from './model.js'
 import { isOnline } from './utils.js'
-import { getDocs, addDoc, onSnapshot } from 'firebase/firestore'
+import { getDocs, addDoc, onSnapshot, queryEqual } from 'firebase/firestore'
 
 const optionDefaults = {
   serverTimestamps: 'estimate',
@@ -76,7 +76,7 @@ class FireCollection extends Collection {
       // this.logDebug("Ignore change source");
       return
     }
-    if (this._ref && newRef && this._ref.isEqual(newRef)) {
+    if (this._ref && newRef && queryEqual(this._ref, newRef)) {
       // this.logDebug("Ignore change source");
       return
     }
