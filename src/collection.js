@@ -70,7 +70,7 @@ class FireCollection extends Collection {
   }
 
   getRef() {
-    const ref = this.ref(this._params)
+    const ref = (this._pathRef = this.ref(this._params))
     return ref ? this.query(ref, this._params) : ref
   }
 
@@ -124,8 +124,8 @@ class FireCollection extends Collection {
   }
 
   async addDocument(data) {
-    // todo: add a separated cache for ref (necessary when query is defined) ?
-    const ref = this.ref()
+    this.ensureRef()
+    const ref = this._pathRef
     if (!ref) {
       throw new Error(`Can not add a document to a collection that has no ref`)
     }

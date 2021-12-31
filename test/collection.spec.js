@@ -584,5 +584,22 @@ describe('FireCollection', () => {
       expect(snapshot.docs.length).to.be.equal(1)
       expect(snapshot.docs[0].data()).to.be.eql({ foo: 'bar' })
     })
+
+    it('should not call ref if already computed', async () => {
+      const collectionRef = createCollectionRef(db)
+      const refSpy = sinon.spy()
+
+      class TestCollection extends FireCollection {
+        ref() {
+          refSpy()
+          return collectionRef
+        }
+      }
+      const collection = new TestCollection()
+      collection.ensureRef()
+      expect(refSpy).to.be.calledOnce
+      await collection.addDocument({ foo: 'bar' })
+      expect(refSpy).to.be.calledOnce
+    })
   })
 })
