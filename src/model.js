@@ -17,7 +17,7 @@ class FireModel extends Model {
 
   refRoot() {
     if (this.collection) {
-      return this.collection.ref()
+      return this.collection.ensureRef()
     }
   }
 
@@ -41,10 +41,11 @@ class FireModel extends Model {
     let action
     let response = modelData
     switch (method) {
-      case 'read':
+      case 'read': {
         const snapshot = await getDoc(docRef)
         response = { ...snapshot.data(), id: docRef.id }
         break
+      }
       case 'create':
       case 'update':
         action = setDoc(docRef, data)

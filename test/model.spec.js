@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
 import { FireModel } from '../src/model.js'
+import { FireCollection } from '../src/collection.js'
 import {
   initializeDataset,
   clearDataset,
@@ -47,10 +48,25 @@ describe('FireModel', () => {
 
     it('should return its collection ref', () => {
       const model = new FireModel()
-      model.collection = { ref: () => collection(db, 'mycollection') }
+      model.collection = new FireCollection()
+      sinon
+        .stub(model.collection, 'ref')
+        .callsFake(() => collection(db, 'mycollection'))
       const ref = model.refRoot()
       expect(ref).to.be.instanceOf(CollectionReference)
       expect(ref.path).to.equal('mycollection')
+    })
+
+    it('should call collection ref only once', () => {
+      const model = new FireModel()
+      model.collection = new FireCollection()
+      sinon
+        .stub(model.collection, 'ref')
+        .callsFake(() => collection(db, 'mycollection'))
+      model.refRoot()
+      expect(model.collection.ref).to.be.calledOnce
+      model.refRoot()
+      expect(model.collection.ref).to.be.calledOnce
     })
   })
 
