@@ -6,7 +6,7 @@
 [![Coverage Status](https://img.shields.io/coveralls/blikblum/nextbone-firestore.svg?style=flat-square)](https://coveralls.io/github/blikblum/nextbone-firestore)
 [![Dependency Status](http://img.shields.io/david/dev/blikblum/nextbone-firestore.svg?style=flat-square)](https://david-dm.org/blikblum/nextbone-firestore#info=devDependencies)
 
-> nextbone-firestore is a Nextbone binding for [Firestore](https://firebase.google.com/docs/firestore)
+> nextbone-firestore is a [Nextbone]() binding for [Firestore](https://firebase.google.com/docs/firestore)
 
 ### Features
 
@@ -18,34 +18,36 @@
 
 > Assumes Firebase Web SDK is properly [installed and configured](https://firebase.google.com/docs/web/setup)
 
+> Use the v9 firestore API
+
 ```js
 import firebase from 'firebase/app'
-import { FireCollection, FireModel, refSource } from 'nextbone-firestore'
+import { FireCollection, FireModel } from 'nextbone-firestore'
+import { getFirestore, collection, query, where } from 'firebase/firestore'
 
-const db = firebase.firestore()
+const db = getFirestore()
 
 class PatientsQuery extends FireCollection {
-  // changes to to includeInactive will re evaluate ref / query
-  @refSource
-  includeInactive
-
-  query(ref) {
-    // optionally add a query method to configure the query params
-    const { includeInactive } = this
-    let query = ref
+  query(ref, params) {
+    const { includeInactive } = params
+    let result = ref
+    // optionally add a query condition
     if (!includeInactive) {
-      query = query.where('active', '==', true)
+      result = query(ref, where('active', '==', true))
     }
-    return query
+    return result
   }
 
-  ref() {
+  ref(params) {
     // return the collection ref
-    return db.collection(`patients`)
+    return collection(db, `clinics/${params.clinicId}/patients`)
   }
 }
 
 const patients = new PatientsQuery()
+// set some params
+patients.params.clinicId = 'clinic-1'
+
 // get all patients once
 await patients.fetch()
 
@@ -55,7 +57,9 @@ patients.observe()
 await patients.ready()
 
 // reset the query
-patients.includeInactive = true
+patients.params.includeInactive = true
+// or
+patients.params = { ...patients.params, includeInactive: true }
 // awaits for the query with new params return
 await patients.ready()
 ```
@@ -73,4 +77,4 @@ license.
 
 ---
 
-Made with ♥ by Luiz Américo and [contributors](https://github.com/blikblum/nextbone-firestore/graphs/contributors)
+Made by Luiz Américo
