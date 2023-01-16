@@ -217,6 +217,39 @@ describe('FireCollection', () => {
       expect(requestSpy).to.be.calledOnce
     })
 
+    it('should trigger load after observe', async () => {
+      const ref = createCollectionRef(db)
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+
+      const collection = new TestCollection()
+      const loadSpy = spy()
+      collection.on('load', loadSpy)
+      collection.observe()
+      await collection.ready()
+      expect(collection.isLoading).to.be.equal(false)
+      expect(loadSpy).to.be.calledOnce
+    })
+
+    it('should trigger load after standalone fetch', async () => {
+      const ref = createCollectionRef(db)
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+
+      const collection = new TestCollection()
+      const loadSpy = spy()
+      collection.on('load', loadSpy)
+      await collection.ready()
+      expect(collection.isLoading).to.be.equal(false)
+      expect(loadSpy).to.be.calledOnce
+    })
+
     it('should call parse', async () => {
       class TestCollection extends FireCollection {
         query(ref) {

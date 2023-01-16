@@ -119,6 +119,7 @@ class FireCollection extends Collection {
       }
       this.set([])
       this.changeLoadingState(false)
+      this.trigger('load', this)
     }
     this.trigger('request')
   }
@@ -211,9 +212,11 @@ class FireCollection extends Collection {
         await this.beforeSync()
         this.handleSnapshot(snapshot)
       })
-      .catch((err) =>
+      .catch((err) => {
+        this.changeLoadingState(false)
+        this.trigger('load', this)
         console.error(`Fetch initial data failed: ${err.message}`)
-      )
+      })
 
     this.firedInitialFetch = true
   }
@@ -231,11 +234,12 @@ class FireCollection extends Collection {
     }))
     this.set(data, { parse: true })
     this.changeLoadingState(false)
+    this.trigger('load', this)
     this.trigger('sync')
   }
 
   handleSnapshotError(err) {
-    this.trigger('sync')
+    this.trigger('load', this)
     throw new Error(`${this.path} snapshot error: ${err.message}`)
   }
 
