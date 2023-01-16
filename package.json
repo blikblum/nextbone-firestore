@@ -45,5 +45,6 @@
     "index.js",
     "src",
     "LICENSE.txt"
-  ]
+  ],
+  "packageManager": "yarn@3.3.1"
 }
