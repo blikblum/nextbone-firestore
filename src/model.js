@@ -48,7 +48,7 @@ class FireModel extends Model {
       }
       case 'create':
       case 'update':
-        action = setDoc(docRef, data)
+        action = setDoc(docRef, data, { merge: options.merge })
         break
       case 'patch':
         action = updateDoc(docRef, data)

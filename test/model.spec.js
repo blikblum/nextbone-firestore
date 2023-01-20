@@ -176,6 +176,30 @@ describe('FireModel', () => {
       })
     })
 
+    it.skip('should handle merge option for nested fields when saving existing model', async () => {
+      const docRef = doc(db, 'myCollection3', 'x')
+
+      class TestModel extends FireModel {
+        ref() {
+          return docRef
+        }
+      }
+      const model = new TestModel({ id: 'x' })
+      await model.save({ foo: 'bar', test: { color: 'a', type: 'x' } })
+      await model.save({ test: { color: 'y' } }, { merge: true })
+      const snapshot = await getDoc(docRef)
+      expect(snapshot.data()).to.be.eql({
+        foo: 'bar',
+        test: { color: 'y', type: 'x' },
+      })
+      // todo: implement reading doc data from database or ignore the mangled state leaving to be updated lazily
+      expect(model.attributes).to.be.eql({
+        id: 'x',
+        foo: 'bar',
+        test: { color: 'y', type: 'x' },
+      })
+    })
+
     it('should update doc with passed attrs when saving existing model with patch', async () => {
       const docRef = doc(db, 'myCollection3', 'x')
 
@@ -196,6 +220,30 @@ describe('FireModel', () => {
       expect(snapshot.data()).to.be.eql({
         foo: 'y',
         test: 'a',
+      })
+    })
+
+    it.skip('should accept dot notation for nested fields when saving existing model with patch', async () => {
+      const docRef = doc(db, 'myCollection3', 'x')
+
+      class TestModel extends FireModel {
+        ref() {
+          return docRef
+        }
+      }
+      const model = new TestModel({ id: 'x' })
+      await model.save({ foo: 'bar', test: { color: 'a', type: 'x' } })
+      await model.save({ 'test.color': 'y' }, { patch: true, wait: true })
+      const snapshot = await getDoc(docRef)
+      expect(snapshot.data()).to.be.eql({
+        foo: 'bar',
+        test: { color: 'y', type: 'x' },
+      })
+      // todo: implement reading doc data from database or ignore the mangled state leaving to be updated lazily
+      expect(model.attributes).to.be.eql({
+        id: 'x',
+        foo: 'bar',
+        test: { color: 'y', type: 'x' },
       })
     })
 
