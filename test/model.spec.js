@@ -17,6 +17,8 @@ import {
   getDocs,
   DocumentReference,
   CollectionReference,
+  query,
+  orderBy,
 } from 'firebase/firestore'
 
 const { spy } = sinon
@@ -171,6 +173,48 @@ describe('FireModel', () => {
         test: 'a',
       })
       expect(snapshot.data()).to.be.eql({
+        foo: 'y',
+        test: 'a',
+      })
+    })
+
+    it('should use collection ref when saving existing model', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return collection(db, 'myCollection2')
+        }
+      }
+
+      class TestModel extends FireModel {}
+      const model = new TestModel({ id: 'x', foo: 'bar', test: 'a' })
+      new TestCollection({ models: [model] })
+      await model.save({ foo: 'y' })
+
+      expect(model.attributes).to.be.eql({
+        id: 'x',
+        foo: 'y',
+        test: 'a',
+      })
+    })
+
+    it('should work when collection uses query and when saving existing model', async () => {
+      class TestCollection extends FireCollection {
+        query(ref) {
+          return query(ref, orderBy('count'))
+        }
+
+        ref() {
+          return collection(db, 'myCollection2')
+        }
+      }
+
+      class TestModel extends FireModel {}
+      const model = new TestModel({ id: 'x', foo: 'bar', test: 'a' })
+      new TestCollection({ models: [model] })
+      await model.save({ foo: 'y' })
+
+      expect(model.attributes).to.be.eql({
+        id: 'x',
         foo: 'y',
         test: 'a',
       })

@@ -17,7 +17,8 @@ class FireModel extends Model {
 
   refRoot() {
     if (this.collection) {
-      return this.collection.ensureRef()
+      this.collection.ensureRef()
+      return this.collection.getPathRef()
     }
   }
 

@@ -74,6 +74,10 @@ class FireCollection extends Collection {
     return ref ? this.query(ref, this._params) : ref
   }
 
+  getPathRef() {
+    return this._pathRef
+  }
+
   ensureRef() {
     if (!this._ref) {
       this._ref = this.getRef()
