@@ -8,3 +8,5 @@ node_modules
 npm-debug.log
 /firestore-debug.log
 /firebase-debug.log
+/.yarn/cache/
+/.yarn/install-state.gz
