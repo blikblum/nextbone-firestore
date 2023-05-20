@@ -602,6 +602,14 @@ describe('FireCollection', () => {
   })
 
   describe('addDocument', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
     it('should add a new document', async () => {
       const collectionRef = createCollectionRef(db)
 

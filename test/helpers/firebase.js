@@ -33,6 +33,8 @@ export const getDb = async () => {
 
 export const clearFirestoreData = async () => {
   const testEnv = await getTestEnv()
+  // awaiting leads to FetchError: request to http://localhost:8080/emulator/v1/projects/nextbone-firestore-test/databases/(default)/documents failed, reason: connect ECONNREFUSED ::1:8080
+  // await testEnv.clearFirestore()
   testEnv.clearFirestore()
 }
 
