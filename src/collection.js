@@ -183,7 +183,7 @@ class FireCollection extends Collection {
      */
     this.changeLoadingState(true)
     this.trigger('request')
-    
+
     this._ref
       .get()
       .then(async (snapshot) => {
@@ -193,7 +193,7 @@ class FireCollection extends Collection {
       .catch((err) =>
         console.error(`Fetch initial data failed: ${err.message}`)
       )
-    
+
     this.firedInitialFetch = true
   }
 
@@ -210,11 +210,11 @@ class FireCollection extends Collection {
     }))
     this.set(data, { parse: true })
     this.changeLoadingState(false)
-    this.trigger('sync')
+    this.trigger('sync load')
   }
 
   handleSnapshotError(err) {
-    this.trigger('sync')
+    this.trigger('sync load')
     throw new Error(`${this.path} snapshot error: ${err.message}`)
   }
 
@@ -248,7 +248,7 @@ class FireCollection extends Collection {
       this.logDebug('Subscribe listeners')
       this.changeLoadingState(true)
       this.trigger('request')
-       if (this._ref) {
+      if (this._ref) {
         this.onSnapshotUnsubscribeFn = this._ref.onSnapshot(
           async (snapshot) => {
             await this.beforeSync()
@@ -321,12 +321,8 @@ const refSource = (optionsOrProtoOrDescriptor, fieldName, events) => {
     enumerable: true,
   }
   if (!isLegacy) {
-    const {
-      kind,
-      placement,
-      descriptor,
-      initializer,
-    } = optionsOrProtoOrDescriptor
+    const { kind, placement, descriptor, initializer } =
+      optionsOrProtoOrDescriptor
     return {
       kind,
       placement,
