@@ -20,6 +20,10 @@ import {
   getDocs,
   CollectionReference,
   Query,
+  setDoc,
+  deleteField,
+  doc,
+  updateDoc,
 } from 'firebase/firestore'
 
 const { match, spy, stub } = sinon
@@ -271,6 +275,28 @@ describe('FireCollection', () => {
           resolve()
         })
       })
+    })
+
+    it('should remove attribute when deleted in database', async () => {
+      const ref = createCollectionRef(db)
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+      const collection = new TestCollection()
+      collection.observe()
+      addDoc(ref, { x: 'y' })
+      await new Promise((resolve) => {
+        collection.once('add', resolve)
+      })
+      const model = collection.at(0)
+      expect(model.get('x')).to.be.equal('y')
+      updateDoc(doc(ref, model.id), { x: deleteField() })
+      await new Promise((resolve) => {
+        collection.once('update', resolve)
+      })
+      expect(model.get('x')).to.be.undefined
     })
   })
 

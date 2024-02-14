@@ -120,7 +120,7 @@ class FireCollection extends Collection {
         this.logDebug('Change collection -> clear listeners')
         this.updateListeners(false)
       }
-      this.set([])
+      this.set([], { reset: true })
       this.changeLoadingState(false)
       this.trigger('load', this)
     }
@@ -195,7 +195,7 @@ class FireCollection extends Collection {
       return
     }
     if (!this._ref) {
-      this.set([])
+      this.set([], { reset: true })
       return
     }
     this.logDebug('Fetch initial data')
@@ -232,7 +232,7 @@ class FireCollection extends Collection {
       }),
       id: doc.id,
     }))
-    this.set(data, { parse: true })
+    this.set(data, { parse: true, reset: true })
     this.changeLoadingState(false)
     this.trigger('load', this)
     this.trigger('sync')
