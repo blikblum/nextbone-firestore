@@ -1,7 +1,6 @@
 import { Collection } from 'nextbone'
 import { uniqueId } from 'lodash-es'
 import { FireModel } from './model.js'
-import { isOnline } from './utils.js'
 import { getDocs, addDoc, onSnapshot, queryEqual } from 'firebase/firestore'
 
 const optionDefaults = {
@@ -134,11 +133,8 @@ class FireCollection extends Collection {
     if (!ref) {
       throw new Error(`Can not add a document to a collection that has no ref`)
     }
-    if (isOnline()) {
-      await addDoc(ref, data)
-    } else {
-      addDoc(ref, data)
-    }
+
+    return addDoc(ref, data)
   }
 
   async ready() {

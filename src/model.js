@@ -1,6 +1,5 @@
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { Model } from 'nextbone'
-import { isOnline } from './utils.js'
 
 const getDocRef = (model, method) => {
   if (method === 'create') {
@@ -11,6 +10,9 @@ const getDocRef = (model, method) => {
 }
 
 class FireModel extends Model {
+  /**
+   * @return {Promise<void> | undefined}
+   */
   beforeSync() {
     // to be overriden
   }
@@ -37,6 +39,7 @@ class FireModel extends Model {
       throw new Error(`FireModel: ref not defined`)
     }
     await this.beforeSync()
+    // eslint-disable-next-line no-unused-vars
     const { id, ...modelData } = this.toJSON(options)
     const data = options.attrs || modelData
     let action
@@ -60,7 +63,7 @@ class FireModel extends Model {
       default:
         throw new Error(`FireModel: unrecognized sync method: "${method}"`)
     }
-    if (action && isOnline()) {
+    if (action) {
       await action
     }
     if (method === 'create') {
