@@ -1,6 +1,11 @@
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { Model } from 'nextbone'
 
+/**
+ * @param {Model} model
+ * @param {string} method
+ * @returns
+ */
 const getDocRef = (model, method) => {
   if (method === 'create') {
     const refRoot = model.refRoot()
@@ -17,6 +22,9 @@ class FireModel extends Model {
     // to be overriden
   }
 
+  /**
+   * @returns {CollectionReference | undefined}
+   */
   refRoot() {
     if (this.collection) {
       this.collection.ensureRef()
@@ -24,6 +32,9 @@ class FireModel extends Model {
     }
   }
 
+  /**
+   * @returns {DocumentReference | CollectionReference | undefined}
+   */
   ref() {
     const refRoot = this.refRoot()
     if (refRoot && !this.isNew()) {
@@ -32,6 +43,11 @@ class FireModel extends Model {
     return refRoot
   }
 
+  /**
+   * @param {string} method
+   * @param {*} options
+   * @returns
+   */
   async sync(method, options) {
     const docRef = getDocRef(this, method)
 

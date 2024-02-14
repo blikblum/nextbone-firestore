@@ -3,6 +3,12 @@ import { uniqueId } from 'lodash-es'
 import { FireModel } from './model.js'
 import { getDocs, addDoc, onSnapshot, queryEqual } from 'firebase/firestore'
 
+/**
+ * @typedef {import('firebase/firestore').Query} Query
+ * @typedef {import('firebase/firestore').DocumentReference} DocumentReference
+ * @typedef {import('firebase/firestore').CollectionReference} CollectionReference
+ */
+
 const optionDefaults = {
   serverTimestamps: 'estimate',
   debug: false,
@@ -21,7 +27,14 @@ const createParamsProxy = (params, instance) => {
 class FireCollection extends Collection {
   constructor({ models, ...options } = {}) {
     super(models, options)
+    /**
+     * @type {CollectionReference | Query | undefined}
+     */
     this._ref = undefined
+    /**
+     * @type {CollectionReference | undefined}
+     */
+    this._pathRef = undefined
     this._params = {}
     this._paramsProxy = createParamsProxy(this._params, this)
     this.sourceId = undefined
@@ -56,27 +69,46 @@ class FireCollection extends Collection {
     this.updateRef()
   }
 
+  /**
+   * @return {Promise<void> | undefined}
+   */
   beforeSync() {
     // to be overriden
   }
 
+  /**
+   * @return { CollectionReference | undefined}
+   */
   ref() {
     // to be overriden
   }
 
+  /**
+   * @param {CollectionReference} ref
+   * @returns {Query | CollectionReference | undefined}
+   */
   query(ref) {
     return ref
   }
 
+  /**
+   * @returns {Query | CollectionReference | undefined}
+   */
   getRef() {
     const ref = (this._pathRef = this.ref(this._params))
     return ref ? this.query(ref, this._params) : ref
   }
 
+  /**
+   * @returns {CollectionReference | undefined}
+   */
   getPathRef() {
     return this._pathRef
   }
 
+  /**
+   * @returns {CollectionReference | Query | undefined}
+   */
   ensureRef() {
     if (!this._ref) {
       this._ref = this.getRef()
@@ -127,6 +159,10 @@ class FireCollection extends Collection {
     this.trigger('request')
   }
 
+  /**
+   * @param {*} data
+   * @returns {Promise<DocumentReference>}
+   */
   async addDocument(data) {
     this.ensureRef()
     const ref = this._pathRef
