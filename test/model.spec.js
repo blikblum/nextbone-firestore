@@ -8,7 +8,7 @@ import {
   collectionName,
   collectionData,
 } from './helpers/dataset.js'
-import { getDb } from './helpers/firebase.js'
+import { createCollectionRef, getDb } from './helpers/firebase.js'
 
 import {
   doc,
@@ -136,7 +136,7 @@ describe('FireModel', () => {
     })
 
     it('should create a doc when saving new model', async () => {
-      const collectionRef = collection(db, 'myCollection1')
+      const collectionRef = createCollectionRef(db)
 
       class TestModel extends FireModel {
         refRoot() {
@@ -146,6 +146,7 @@ describe('FireModel', () => {
       const model = new TestModel({ foo: 'bar', test: 'a' })
       await model.save()
       const snapshot = await getDocs(collectionRef)
+      expect(snapshot.docs).to.have.length(1, 'one doc should be created')
       const firstDoc = snapshot.docs[0]
       expect(model.attributes).to.be.eql({
         id: firstDoc.id,

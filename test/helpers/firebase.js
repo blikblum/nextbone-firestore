@@ -1,6 +1,6 @@
 import { collection } from 'firebase/firestore'
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing'
-import { uniqueId } from 'lodash-es'
+import { nanoid } from 'nanoid'
 
 let globalTestEnv
 
@@ -23,7 +23,7 @@ async function getTestContext() {
 }
 
 export const createCollectionRef = (db) => {
-  return collection(db, uniqueId('collection'))
+  return collection(db, `collection-${nanoid()}`)
 }
 
 export const getDb = async () => {
