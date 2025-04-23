@@ -1,12 +1,17 @@
 import { Collection } from 'nextbone'
 import { uniqueId } from 'lodash-es'
 import { FireModel } from './model.js'
-import { getDocs, addDoc, onSnapshot, queryEqual } from 'firebase/firestore'
+import {
+  getDocs,
+  addDoc,
+  onSnapshot,
+  queryEqual,
+  getFirestore,
+  collection,
+} from 'firebase/firestore'
 
 /**
- * @typedef {import('firebase/firestore').Query} Query
- * @typedef {import('firebase/firestore').DocumentReference} DocumentReference
- * @typedef {import('firebase/firestore').CollectionReference} CollectionReference
+ * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter} from 'firebase/firestore'
  */
 
 const optionDefaults = {
@@ -25,12 +30,33 @@ const createParamsProxy = (params, instance) => {
 }
 
 class FireCollection extends Collection {
+  /**
+   * @returns {Firestore}
+   */
+  static get db() {
+    if (!this._db) {
+      const dbFactory = this.getDb || getFirestore
+      this._db = dbFactory()
+    }
+    return this._db
+  }
+
+  /**
+   * @type {() => Firestore}
+   */
+  static getDb
+
+  /**
+   * @type {FirestoreDataConverter}
+   */
+  static converter
+
   constructor({ models, ...options } = {}) {
     super(models, options)
     /**
-     * @type {CollectionReference | Query | undefined}
+     * @type {Query | undefined}
      */
-    this._ref = undefined
+    this._query = undefined
     /**
      * @type {CollectionReference | undefined}
      */
@@ -49,10 +75,6 @@ class FireCollection extends Collection {
 
   get isObserved() {
     return this.observedCount > 0
-  }
-
-  get path() {
-    return this._ref ? this._ref.path : undefined
   }
 
   get params() {
@@ -77,6 +99,15 @@ class FireCollection extends Collection {
   }
 
   /**
+   * @param {Record<string, any>} params
+   * @return { string | undefined}
+   */
+  path() {
+    // to be overriden
+  }
+
+  /**
+   * @param {Record<string, any>} params
    * @return { CollectionReference | undefined}
    */
   ref() {
@@ -85,17 +116,29 @@ class FireCollection extends Collection {
 
   /**
    * @param {CollectionReference} ref
-   * @returns {Query | CollectionReference | undefined}
+   * @param {Record<string, any>} params
+   * @returns {Query | undefined}
    */
   query(ref) {
     return ref
   }
 
   /**
-   * @returns {Query | CollectionReference | undefined}
+   * @returns {Query | undefined}
    */
-  getRef() {
-    const ref = (this._pathRef = this.ref(this._params))
+  getQuery() {
+    let ref
+    const path = this.path(this._params)
+    if (path) {
+      /**
+       * @type {{db: Firestore, converter: FirestoreDataConverter}}
+       */
+      const { db, converter } = this.constructor
+      ref = collection(db, path).withConverter(converter)
+    } else {
+      ref = this.ref(this._params)
+    }
+    this._pathRef = ref
     return ref ? this.query(ref, this._params) : ref
   }
 
@@ -107,13 +150,13 @@ class FireCollection extends Collection {
   }
 
   /**
-   * @returns {CollectionReference | Query | undefined}
+   * @returns {Query | undefined}
    */
   ensureRef() {
-    if (!this._ref) {
-      this._ref = this.getRef()
+    if (!this._query) {
+      this._query = this.getQuery()
     }
-    return this._ref
+    return this._query
   }
 
   async updateRef() {
@@ -121,25 +164,25 @@ class FireCollection extends Collection {
       // by default batch reset calls
       this.updateRefPromise = Promise.resolve()
       await this.updateRefPromise
-      this.changeSource(this.getRef())
+      this.changeSource(this.getQuery())
       this.updateRefPromise = undefined
     }
-    return this._ref
+    return this._query
   }
 
-  changeSource(newRef) {
-    if (!this._ref && !newRef) {
+  changeSource(newQuery) {
+    if (!this._query && !newQuery) {
       // this.logDebug("Ignore change source");
       return
     }
-    if (this._ref && newRef && queryEqual(this._ref, newRef)) {
+    if (this._query && newQuery && queryEqual(this._query, newQuery)) {
       // this.logDebug("Ignore change source");
       return
     }
-    this.logDebug(`Change source to ${newRef ? newRef.path : undefined}`)
+    this.logDebug(`Change source to ${newQuery?.path}`)
     this.firedInitialFetch = false
-    this._ref = newRef
-    if (newRef) {
+    this._query = newQuery
+    if (newQuery) {
       this.logDebug('Setting new ref source')
       this.sourceId = uniqueId('s')
       if (this.isObserved) {
@@ -230,7 +273,7 @@ class FireCollection extends Collection {
       // this.logDebug("Ignore fetch initial data");
       return
     }
-    if (!this._ref) {
+    if (!this._query) {
       this.set([], { reset: true })
       return
     }
@@ -243,7 +286,7 @@ class FireCollection extends Collection {
     this.changeLoadingState(true)
     this.trigger('request')
 
-    getDocs(this._ref)
+    getDocs(this._query)
       .then(async (snapshot) => {
         await this.beforeSync()
         this.handleSnapshot(snapshot)
@@ -276,13 +319,13 @@ class FireCollection extends Collection {
 
   handleSnapshotError(err) {
     this.trigger('load', this)
-    throw new Error(`${this.path} snapshot error: ${err.message}`)
+    throw new Error(`${this._query?.path} snapshot error: ${err.message}`)
   }
 
   logDebug(message) {
     if (this.isDebugEnabled) {
-      if (this._ref) {
-        console.log(`${this.cid} (${this._ref.path}) ${message} `)
+      if (this._query) {
+        console.log(`${this.cid} (${this._query.path}) ${message} `)
       } else {
         console.log(`${this.cid} ${message}`)
       }
@@ -309,9 +352,9 @@ class FireCollection extends Collection {
       this.logDebug('Subscribe listeners')
       this.changeLoadingState(true)
       this.trigger('request')
-      if (this._ref) {
+      if (this._query) {
         this.onSnapshotUnsubscribeFn = onSnapshot(
-          this._ref,
+          this._query,
           async (snapshot) => {
             await this.beforeSync()
             this.handleSnapshot(snapshot)

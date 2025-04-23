@@ -9,6 +9,10 @@ import {
   collectionData,
 } from './helpers/dataset.js'
 
+/**
+ * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter} from 'firebase/firestore'
+ */
+
 import { getDb, createCollectionRef } from './helpers/firebase.js'
 
 import {
@@ -28,6 +32,9 @@ import {
 const { match, spy, stub } = sinon
 
 describe('FireCollection', () => {
+  /**
+   * @type {Firestore}
+   */
   let db
 
   before(async () => {
@@ -69,6 +76,52 @@ describe('FireCollection', () => {
       const ref = collection.ref()
       expect(ref).to.be.instanceOf(CollectionReference)
       expect(ref.path).to.equal('collectionPath')
+    })
+  })
+
+  describe('path', () => {
+    it('should return undefined by default', () => {
+      const model = new FireCollection()
+      expect(model.path()).to.be.undefined
+    })
+
+    it('should return the path of the query', () => {
+      class TestCollection extends FireCollection {
+        static getDb() {
+          return db
+        }
+
+        path() {
+          return 'collectionPath'
+        }
+      }
+      const collection = new TestCollection()
+      const query = collection.getQuery()
+      expect(query).to.be.instanceOf(CollectionReference)
+      expect(query.path).to.equal('collectionPath')
+    })
+
+    it('should apply the defined converter to the query', () => {
+      /**
+       * @type {FirestoreDataConverter}
+       */
+      const converter = {
+        fromFirestore(snapshot) {},
+      }
+      class TestCollection extends FireCollection {
+        static getDb() {
+          return db
+        }
+
+        static converter = converter
+
+        path() {
+          return 'collectionPath'
+        }
+      }
+      const collection = new TestCollection()
+      const query = collection.getQuery()
+      expect(query.converter).to.equal(converter)
     })
   })
 
