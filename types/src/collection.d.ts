@@ -1,84 +1,161 @@
-export type Query = import('firebase/firestore').Query;
-export type DocumentReference = import('firebase/firestore').DocumentReference;
-export type CollectionReference = import('firebase/firestore').CollectionReference;
-export class FireCollection extends Collection<import("nextbone").Model<any, import("nextbone").ModelSetOptions, any>> {
+/**
+ * NextBone collection synchronized with a Firestore collection or query.
+ * @template Params extends object = object
+ * @extends {Collection<Model<any, ModelSetOptions, any>>}
+ */
+export class FireCollection<Params> extends Collection<Model<any, ModelSetOptions, any>> {
+    /**
+     * @param {{ models?: any } & Partial<{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }>} [options]
+     */
     constructor({ models, ...options }?: {
-        models: any;
-    });
-    /**
-     * @type {CollectionReference | Query | undefined}
-     */
-    _ref: CollectionReference | Query | undefined;
-    /**
-     * @type {CollectionReference | undefined}
-     */
+        models?: any;
+    } & Partial<{
+        serverTimestamps: SnapshotOptions['serverTimestamps'];
+        debug: boolean;
+    }>);
+    /** @type {Query|CollectionReference|undefined} */
+    _ref: Query | CollectionReference | undefined;
+    /** @type {CollectionReference|undefined} */
     _pathRef: CollectionReference | undefined;
-    _params: {};
-    _paramsProxy: any;
-    sourceId: any;
-    listenerSourceId: any;
+    /** @type {Params} */
+    _params: Params;
+    /** @type {Params} */
+    _paramsProxy: Params;
+    /** @type {string|undefined} */
+    sourceId: string | undefined;
+    /** @type {string|undefined} */
+    listenerSourceId: string | undefined;
+    /** @type {Promise<void>} */
     readyPromise: Promise<void>;
-    updateRefPromise: Promise<void>;
+    /** @type {(() => void)|undefined} */
+    readyResolveFn: (() => void) | undefined;
+    /** @type {Promise<void>|undefined} */
+    updateRefPromise: Promise<void> | undefined;
+    /** @type {number} */
     observedCount: number;
+    /** @type {boolean} */
     firedInitialFetch: boolean;
+    /** @type {{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }} */
     options: {
-        serverTimestamps: string;
+        serverTimestamps: SnapshotOptions['serverTimestamps'];
         debug: boolean;
     };
-    isDebugEnabled: any;
+    /** @type {boolean} */
+    isDebugEnabled: boolean;
+    /** @type {Unsubscribe|undefined} */
+    onSnapshotUnsubscribeFn: Unsubscribe | undefined;
+    /** @returns {boolean} */
     get isObserved(): boolean;
-    get path(): any;
-    set params(value: any);
-    get params(): any;
-    /**
-     * @return {Promise<void> | undefined}
+    /** @returns {string|undefined} */
+    get path(): string;
+    /** @param {Params} value */
+    set params(value: Params);
+    /** @returns {Params} */
+    get params(): Params;
+    /** Hook executed before synchronizing data. Override as needed.
+     * @returns {Promise<void>|void}
      */
-    beforeSync(): Promise<void> | undefined;
+    beforeSync(): Promise<void> | void;
     /**
-     * @return { CollectionReference | undefined}
+     * Should return the base CollectionReference for this collection.
+     * Override in subclasses.
+     * @param {Params} [params]
+     * @returns {CollectionReference|undefined}
      */
-    ref(): CollectionReference | undefined;
+    ref(params?: Params): CollectionReference | undefined;
     /**
+     * Optionally apply query constraints to a path ref and return a Query.
      * @param {CollectionReference} ref
-     * @returns {Query | CollectionReference | undefined}
+     * @param {Params} [params]
+     * @returns {Query|CollectionReference|undefined}
      */
-    query(ref: CollectionReference): Query | CollectionReference | undefined;
+    query(ref: CollectionReference, params?: Params): Query | CollectionReference | undefined;
     /**
-     * @returns {Query | CollectionReference | undefined}
+     * Build and return the current reference (Query or CollectionReference).
+     * @returns {Query|CollectionReference|undefined}
      */
     getRef(): Query | CollectionReference | undefined;
-    /**
-     * @returns {CollectionReference | undefined}
-     */
+    /** @returns {CollectionReference|undefined} */
     getPathRef(): CollectionReference | undefined;
     /**
-     * @returns {CollectionReference | Query | undefined}
+     * Ensure and return the current reference.
+     * @returns {Query|CollectionReference|undefined}
      */
-    ensureRef(): CollectionReference | Query | undefined;
-    updateRef(): Promise<import("@firebase/firestore").CollectionReference<import("@firebase/firestore").DocumentData> | import("@firebase/firestore").Query<import("@firebase/firestore").DocumentData>>;
-    changeSource(newRef: any): void;
+    ensureRef(): Query | CollectionReference | undefined;
     /**
-     * @param {*} data
+     * Debounced/batched update that recalculates the ref and triggers source changes.
+     * @returns {Promise<Query|CollectionReference|undefined>}
+     */
+    updateRef(): Promise<Query | CollectionReference | undefined>;
+    /**
+     * Switch to a new source ref/query. Manages listeners and loading state.
+     * @param {Query|CollectionReference|undefined} newRef
+     * @returns {void}
+     */
+    changeSource(newRef: Query | CollectionReference | undefined): void;
+    /**
+     * Add a new document to the underlying collection path.
+     * @param {object} data
      * @returns {Promise<DocumentReference>}
      */
-    addDocument(data: any): Promise<DocumentReference>;
+    addDocument(data: object): Promise<DocumentReference>;
+    /**
+     * Resolve when the collection becomes ready. Triggers a one-time fetch if not listening.
+     * @returns {Promise<void>}
+     */
     ready(): Promise<void>;
+    /** Start observing and attach realtime listeners when first observer appears. */
     observe(): void;
+    /** Stop observing and detach listeners when no observers remain. */
     unobserve(): void;
-    changeReady(isReady: any): void;
-    readyResolveFn: (value: any) => void;
+    /**
+     * Set or reset the ready promise based on loading state.
+     * @param {boolean} isReady
+     * @returns {void}
+     */
+    changeReady(isReady: boolean): void;
+    /** Initialize the internal ready resolver/promise. */
     initReadyResolver(): void;
+    /**
+     * Perform a one-time getDocs() fetch and feed it into handleSnapshot.
+     * @returns {void}
+     */
     fetchInitialData(): void;
-    handleSnapshot(snapshot: any): void;
-    handleSnapshotError(err: any): void;
-    logDebug(message: any): void;
-    updateListeners(shouldListen: any): void;
-    onSnapshotUnsubscribeFn: import("@firebase/firestore").Unsubscribe;
-    changeLoadingState(isLoading: any): void;
-    isLoading: any;
-    sync(): Promise<{
-        id: string;
-    }[]>;
+    /**
+     * Normalize snapshot docs and reset the collection.
+     * @param {QuerySnapshot} snapshot
+     * @returns {void}
+     */
+    handleSnapshot(snapshot: QuerySnapshot): void;
+    /**
+     * Handle onSnapshot errors.
+     * @param {Error} err
+     * @returns {void}
+     */
+    handleSnapshotError(err: Error): void;
+    /**
+     * Log debug messages when debug is enabled.
+     * @param {string} message
+     * @returns {void}
+     */
+    logDebug(message: string): void;
+    /**
+     * Attach or detach realtime listeners based on shouldListen.
+     * @param {boolean} shouldListen
+     * @returns {void}
+     */
+    updateListeners(shouldListen: boolean): void;
+    /**
+     * Toggle loading state and update the ready promise.
+     * @param {boolean} isLoading
+     * @returns {void}
+     */
+    changeLoadingState(isLoading: boolean): void;
+    /**
+     * Perform a one-time fetch and return normalized data.
+     * @returns {Promise<Array<Record<string, any>>>}
+     */
+    sync(): Promise<Array<Record<string, any>>>;
 }
 export namespace FireCollection {
     export { FireModel as model };

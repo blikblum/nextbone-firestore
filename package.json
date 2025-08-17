@@ -18,21 +18,21 @@
   "main": "index.js",
   "types": "types/index.d.ts",
   "peerDependencies": {
-    "firebase": "^9.15.0",
+    "firebase": "^11.0.1",
     "lodash-es": "^4.17.11",
-    "nextbone": "^0.25.0"
+    "nextbone": "^0.29.0"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^2.0.7",
     "chai": "^4.3.7",
     "eslint": "^8.32.0",
     "eslint-config-prettier": "^8.6.0",
-    "firebase": "^9.22.0",
+    "firebase": "^11.0.1",
     "firebase-tools": "^12.1.0",
     "lodash-es": "^4.17.21",
     "mocha": "^10.2.0",
     "nanoid": "^5.0.5",
-    "nextbone": "^0.27.2",
+    "nextbone": "^0.29.0",
     "prettier": "^2.8.3",
     "sinon": "^15.1.0",
     "sinon-chai": "^3.7.0",

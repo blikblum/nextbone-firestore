@@ -4,16 +4,23 @@ import { FireModel } from './model.js'
 import { getDocs, addDoc, onSnapshot, queryEqual } from 'firebase/firestore'
 
 /**
- * @typedef {import('firebase/firestore').Query} Query
- * @typedef {import('firebase/firestore').DocumentReference} DocumentReference
- * @typedef {import('firebase/firestore').CollectionReference} CollectionReference
+ * @import { Model, ModelSetOptions } from 'nextbone'
+ * @import { DocumentReference, CollectionReference, Query, QuerySnapshot, SnapshotOptions, Unsubscribe } from 'firebase/firestore'
  */
 
+/** @type {{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }} */
 const optionDefaults = {
   serverTimestamps: 'estimate',
   debug: false,
 }
 
+/**
+ * Proxies params to trigger updateRef() whenever a property is set.
+ * @template P extends object
+ * @param {P} params
+ * @param {FireCollection<P>} instance
+ * @returns {P}
+ */
 const createParamsProxy = (params, instance) => {
   return new Proxy(params, {
     set(target, prop, value) {
@@ -24,41 +31,92 @@ const createParamsProxy = (params, instance) => {
   })
 }
 
+/**
+ * NextBone collection synchronized with a Firestore collection or query.
+ * @template Params extends object = object
+ * @extends {Collection<Model<any, ModelSetOptions, any>>}
+ */
 class FireCollection extends Collection {
+  /** @type {Query|CollectionReference|undefined} */
+  _ref
+  /** @type {CollectionReference|undefined} */
+  _pathRef
+  /** @type {Params} */
+  _params
+  /** @type {Params} */
+  _paramsProxy
+  /** @type {string|undefined} */
+  sourceId
+  /** @type {string|undefined} */
+  listenerSourceId
+  /** @type {Promise<void>} */
+  readyPromise
+  /** @type {(() => void)|undefined} */
+  readyResolveFn
+  /** @type {Promise<void>|undefined} */
+  updateRefPromise
+  /** @type {number} */
+  observedCount
+  /** @type {boolean} */
+  firedInitialFetch
+  /** @type {{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }} */
+  options
+  /** @type {boolean} */
+  isDebugEnabled
+  /** @type {boolean} */
+  isLoading
+  /** @type {Unsubscribe|undefined} */
+  onSnapshotUnsubscribeFn
+
+  /**
+   * @param {{ models?: any } & Partial<{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }>} [options]
+   */
   constructor({ models, ...options } = {}) {
     super(models, options)
-    /**
-     * @type {CollectionReference | Query | undefined}
-     */
+
+    /** @type {typeof this._ref} */
     this._ref = undefined
-    /**
-     * @type {CollectionReference | undefined}
-     */
+
+    /** @type {typeof this._pathRef} */
     this._pathRef = undefined
+    /** @type {Params} */
     this._params = {}
+    /** @type {Params} */
     this._paramsProxy = createParamsProxy(this._params, this)
+    /** @type {typeof this.sourceId} */
     this.sourceId = undefined
+    /** @type {typeof this.listenerSourceId} */
     this.listenerSourceId = undefined
+    /** @type {Promise<void>} */
     this.readyPromise = Promise.resolve()
+    /** @type {typeof this.updateRefPromise} */
     this.updateRefPromise = undefined
+    /** @type {number} */
     this.observedCount = 0
+    /** @type {boolean} */
     this.firedInitialFetch = false
+    /** @type {typeof this.options} */
     this.options = Object.assign(Object.assign({}, optionDefaults), options)
-    this.isDebugEnabled = options.debug || false
+    /** @type {boolean} */
+    this.isDebugEnabled = !!(options && options.debug)
   }
 
+  /** @returns {boolean} */
   get isObserved() {
     return this.observedCount > 0
   }
 
+  /** @returns {string|undefined} */
   get path() {
     return this._ref ? this._ref.path : undefined
   }
 
+  /** @returns {Params} */
   get params() {
     return this._paramsProxy
   }
 
+  /** @param {Params} value */
   set params(value) {
     if (!value || typeof value !== 'object') {
       throw new Error(`FireCollection: params should be an object`)
@@ -69,45 +127,52 @@ class FireCollection extends Collection {
     this.updateRef()
   }
 
-  /**
-   * @return {Promise<void> | undefined}
+  /** Hook executed before synchronizing data. Override as needed.
+   * @returns {Promise<void>|void}
    */
   beforeSync() {
     // to be overriden
   }
 
   /**
-   * @return { CollectionReference | undefined}
+   * Should return the base CollectionReference for this collection.
+   * Override in subclasses.
+   * @param {Params} [params]
+   * @returns {CollectionReference|undefined}
    */
-  ref() {
+  // eslint-disable-next-line no-unused-vars
+  ref(params) {
     // to be overriden
   }
 
   /**
+   * Optionally apply query constraints to a path ref and return a Query.
    * @param {CollectionReference} ref
-   * @returns {Query | CollectionReference | undefined}
+   * @param {Params} [params]
+   * @returns {Query|CollectionReference|undefined}
    */
-  query(ref) {
+  // eslint-disable-next-line no-unused-vars
+  query(ref, params) {
     return ref
   }
 
   /**
-   * @returns {Query | CollectionReference | undefined}
+   * Build and return the current reference (Query or CollectionReference).
+   * @returns {Query|CollectionReference|undefined}
    */
   getRef() {
     const ref = (this._pathRef = this.ref(this._params))
     return ref ? this.query(ref, this._params) : ref
   }
 
-  /**
-   * @returns {CollectionReference | undefined}
-   */
+  /** @returns {CollectionReference|undefined} */
   getPathRef() {
     return this._pathRef
   }
 
   /**
-   * @returns {CollectionReference | Query | undefined}
+   * Ensure and return the current reference.
+   * @returns {Query|CollectionReference|undefined}
    */
   ensureRef() {
     if (!this._ref) {
@@ -116,6 +181,10 @@ class FireCollection extends Collection {
     return this._ref
   }
 
+  /**
+   * Debounced/batched update that recalculates the ref and triggers source changes.
+   * @returns {Promise<Query|CollectionReference|undefined>}
+   */
   async updateRef() {
     if (!this.updateRefPromise) {
       // by default batch reset calls
@@ -127,6 +196,11 @@ class FireCollection extends Collection {
     return this._ref
   }
 
+  /**
+   * Switch to a new source ref/query. Manages listeners and loading state.
+   * @param {Query|CollectionReference|undefined} newRef
+   * @returns {void}
+   */
   changeSource(newRef) {
     if (!this._ref && !newRef) {
       // this.logDebug("Ignore change source");
@@ -160,7 +234,8 @@ class FireCollection extends Collection {
   }
 
   /**
-   * @param {*} data
+   * Add a new document to the underlying collection path.
+   * @param {object} data
    * @returns {Promise<DocumentReference>}
    */
   async addDocument(data) {
@@ -173,6 +248,10 @@ class FireCollection extends Collection {
     return addDoc(ref, data)
   }
 
+  /**
+   * Resolve when the collection becomes ready. Triggers a one-time fetch if not listening.
+   * @returns {Promise<void>}
+   */
   async ready() {
     const isListening = !!this.onSnapshotUnsubscribeFn
     if (this.updateRefPromise) {
@@ -190,6 +269,7 @@ class FireCollection extends Collection {
     return this.readyPromise
   }
 
+  /** Start observing and attach realtime listeners when first observer appears. */
   observe() {
     this.observedCount++
     if (this.observedCount === 1) {
@@ -198,6 +278,7 @@ class FireCollection extends Collection {
     }
   }
 
+  /** Stop observing and detach listeners when no observers remain. */
   unobserve() {
     if (this.observedCount > 0) {
       this.observedCount--
@@ -205,6 +286,11 @@ class FireCollection extends Collection {
     }
   }
 
+  /**
+   * Set or reset the ready promise based on loading state.
+   * @param {boolean} isReady
+   * @returns {void}
+   */
   changeReady(isReady) {
     if (isReady) {
       const readyResolve = this.readyResolveFn
@@ -217,6 +303,7 @@ class FireCollection extends Collection {
     }
   }
 
+  /** Initialize the internal ready resolver/promise. */
   initReadyResolver() {
     if (!this.readyResolveFn) {
       this.readyPromise = new Promise((resolve) => {
@@ -225,6 +312,10 @@ class FireCollection extends Collection {
     }
   }
 
+  /**
+   * Perform a one-time getDocs() fetch and feed it into handleSnapshot.
+   * @returns {void}
+   */
   fetchInitialData() {
     if (this.firedInitialFetch) {
       // this.logDebug("Ignore fetch initial data");
@@ -257,6 +348,11 @@ class FireCollection extends Collection {
     this.firedInitialFetch = true
   }
 
+  /**
+   * Normalize snapshot docs and reset the collection.
+   * @param {QuerySnapshot} snapshot
+   * @returns {void}
+   */
   handleSnapshot(snapshot) {
     this.logDebug(
       `handleSnapshot, ${Date.now()} docs.length: ${snapshot.docs.length}`
@@ -274,11 +370,21 @@ class FireCollection extends Collection {
     this.trigger('sync')
   }
 
+  /**
+   * Handle onSnapshot errors.
+   * @param {Error} err
+   * @returns {void}
+   */
   handleSnapshotError(err) {
     this.trigger('load', this)
     throw new Error(`${this.path} snapshot error: ${err.message}`)
   }
 
+  /**
+   * Log debug messages when debug is enabled.
+   * @param {string} message
+   * @returns {void}
+   */
   logDebug(message) {
     if (this.isDebugEnabled) {
       if (this._ref) {
@@ -289,6 +395,11 @@ class FireCollection extends Collection {
     }
   }
 
+  /**
+   * Attach or detach realtime listeners based on shouldListen.
+   * @param {boolean} shouldListen
+   * @returns {void}
+   */
   updateListeners(shouldListen) {
     const isListening = !!this.onSnapshotUnsubscribeFn
     if (
@@ -323,6 +434,11 @@ class FireCollection extends Collection {
     }
   }
 
+  /**
+   * Toggle loading state and update the ready promise.
+   * @param {boolean} isLoading
+   * @returns {void}
+   */
   changeLoadingState(isLoading) {
     if (this.isLoading === isLoading) {
       // this.logDebug(`Ignore change loading state: ${isLoading}`);
@@ -333,8 +449,12 @@ class FireCollection extends Collection {
     this.isLoading = isLoading
   }
 
+  /**
+   * Perform a one-time fetch and return normalized data.
+   * @returns {Promise<Array<Record<string, any>>>}
+   */
   async sync() {
-    const ref = this.ensureRef()
+    const ref = /** @type {NonNullable<typeof this._ref>} */ (this.ensureRef())
     const snapshot = await getDocs(ref)
     await this.beforeSync()
     const data = snapshot.docs.map((doc) => ({
@@ -347,6 +467,7 @@ class FireCollection extends Collection {
   }
 }
 
+/** @type {typeof FireModel} */
 FireCollection.model = FireModel
 
 export { FireCollection, FireModel }

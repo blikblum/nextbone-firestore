@@ -2,6 +2,10 @@ import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { Model } from 'nextbone'
 
 /**
+ * @import { ModelSetOptions } from 'nextbone'
+ */
+
+/**
  * @param {Model} model
  * @param {string} method
  * @returns
@@ -14,6 +18,10 @@ const getDocRef = (model, method) => {
   return model.ref()
 }
 
+/**
+ * @template T extends Record<string, any> = object
+ * @extends {Model<T, ModelSetOptions, any>}
+ */
 class FireModel extends Model {
   /**
    * @return {Promise<void> | undefined}

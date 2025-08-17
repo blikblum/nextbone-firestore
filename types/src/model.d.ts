@@ -1,5 +1,9 @@
-export class FireModel extends Model<any, import("nextbone").ModelSetOptions, any> {
-    constructor(attributes?: any, options?: any);
+/**
+ * @template T extends Record<string, any> = object
+ * @extends {Model<T, ModelSetOptions, any>}
+ */
+export class FireModel<T> extends Model<T, ModelSetOptions, any> {
+    constructor(attributes?: Partial<T>, options?: any);
     /**
      * @return {Promise<void> | undefined}
      */
