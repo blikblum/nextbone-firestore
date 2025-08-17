@@ -19,7 +19,7 @@ const getDocRef = (model, method) => {
 }
 
 /**
- * @template T extends Record<string, any> = object
+ * @template {Record<string, unknown>} [T=Record<string, unknown>]
  * @extends {Model<T, ModelSetOptions, any>}
  */
 class FireModel extends Model {

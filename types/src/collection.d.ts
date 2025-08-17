@@ -1,9 +1,9 @@
 /**
  * NextBone collection synchronized with a Firestore collection or query.
- * @template Params extends object = object
- * @extends {Collection<Model<any, ModelSetOptions, any>>}
+ * @template {Record<string, unknown>} [Params=Record<string, unknown>]
+ * @extends {Collection<Model<Record<string, unknown>, ModelSetOptions, any>>}
  */
-export class FireCollection<Params> extends Collection<Model<any, ModelSetOptions, any>> {
+export class FireCollection<Params extends Record<string, unknown> = Record<string, unknown>> extends Collection<Model<Record<string, unknown>, ModelSetOptions, any>> {
     /**
      * @param {{ models?: any } & Partial<{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }>} [options]
      */

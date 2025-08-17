@@ -1,8 +1,8 @@
 /**
- * @template T extends Record<string, any> = object
+ * @template {Record<string, unknown>} [T=Record<string, unknown>]
  * @extends {Model<T, ModelSetOptions, any>}
  */
-export class FireModel<T> extends Model<T, ModelSetOptions, any> {
+export class FireModel<T extends Record<string, unknown> = Record<string, unknown>> extends Model<T, ModelSetOptions, any> {
     constructor(attributes?: Partial<T>, options?: any);
     /**
      * @return {Promise<void> | undefined}

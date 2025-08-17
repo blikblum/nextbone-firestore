@@ -33,8 +33,8 @@ const createParamsProxy = (params, instance) => {
 
 /**
  * NextBone collection synchronized with a Firestore collection or query.
- * @template Params extends object = object
- * @extends {Collection<Model<any, ModelSetOptions, any>>}
+ * @template {Record<string, unknown>} [Params=Record<string, unknown>]
+ * @extends {Collection<Model<Record<string, unknown>, ModelSetOptions, any>>}
  */
 class FireCollection extends Collection {
   /** @type {Query|CollectionReference|undefined} */
