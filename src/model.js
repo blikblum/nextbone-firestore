@@ -1,4 +1,14 @@
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore'
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  getFirestore,
+  onSnapshot,
+  collection,
+  queryEqual,
+} from 'firebase/firestore'
 import { Model } from 'nextbone'
 
 /**
@@ -16,9 +26,9 @@ const createParamsProxy = (params, instance) => {
 }
 
 /**
- * @param {Model} model
+ * @param {FireModel} model
  * @param {string} method
- * @returns {DocumentReference | CollectionReference | undefined}
+ * @returns {DocumentReference | undefined}
  */
 const getDocRef = (model, method) => {
   if (method === 'create') {
@@ -112,18 +122,20 @@ class FireModel extends Model {
   /**
    * @param {DocumentReference} ref
    * @param {Record<string, any>} params
-   * @returns {undefined}
+   * @returns {Query | undefined}
    */
+  // eslint-disable-next-line no-unused-vars
   query(ref, params) {}
 
   /**
    * @param {Record<string, any>} params
    * @returns {string | undefined}
    */
+  // eslint-disable-next-line no-unused-vars
   rootPath(params) {}
 
   /**
-   * @returns {DocumentReference | undefined}
+   * @returns {DocumentReference | Query | undefined}
    */
   getRef() {
     const params = this._params
@@ -157,7 +169,7 @@ class FireModel extends Model {
   }
 
   /**
-   * @param {DocumentReference} newRef
+   * @param {DocumentReference | Query} newRef
    * @returns
    */
   changeRef(newRef) {
