@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { FireModel } from '../src/model.js'
+import { FireModel, ObservableModel } from '../src/model.js'
 import { FireCollection } from '../src/collection.js'
 import {
   initializeDataset,
@@ -344,6 +344,97 @@ describe('FireModel', () => {
       expect(beforeSyncSpy).to.be.calledOnce
       expect(parseSpy).to.be.calledOnce
       expect(beforeSyncSpy).to.be.calledBefore(parseSpy)
+    })
+  })
+})
+
+describe('ObservableModel', () => {
+  let db
+
+  before(async () => {
+    db = await getDb()
+  })
+
+  describe('inheritance', () => {
+    it('should extend FireModel', () => {
+      const model = new ObservableModel()
+      expect(model).to.be.instanceOf(FireModel)
+      expect(model).to.be.instanceOf(ObservableModel)
+    })
+
+    it('should have sync method from FireModel', () => {
+      const model = new ObservableModel()
+      expect(model.sync).to.be.a('function')
+    })
+
+    it('should have refRoot and ref methods from FireModel', () => {
+      const model = new ObservableModel()
+      expect(model.refRoot).to.be.a('function')
+      expect(model.ref).to.be.a('function')
+    })
+
+    it('should have beforeSync method from FireModel', () => {
+      const model = new ObservableModel()
+      expect(model.beforeSync).to.be.a('function')
+    })
+  })
+
+  describe('observable functionality', () => {
+    it('should have params property', () => {
+      const model = new ObservableModel()
+      expect(model.params).to.be.an('object')
+    })
+
+    it('should have observe method', () => {
+      const model = new ObservableModel()
+      expect(model.observe).to.be.a('function')
+    })
+
+    it('should have ready method', () => {
+      const model = new ObservableModel()
+      expect(model.ready).to.be.a('function')
+    })
+
+    it('should have updateRef method', () => {
+      const model = new ObservableModel()
+      expect(model.updateRef).to.be.a('function')
+    })
+
+    it('should have changeRef method', () => {
+      const model = new ObservableModel()
+      expect(model.changeRef).to.be.a('function')
+    })
+
+    it('should have query and rootPath methods', () => {
+      const model = new ObservableModel()
+      expect(model.query).to.be.a('function')
+      expect(model.rootPath).to.be.a('function')
+    })
+  })
+
+  describe('basic FireModel functionality', () => {
+    it('should work with refRoot like FireModel', () => {
+      class TestModel extends ObservableModel {
+        refRoot() {
+          return doc(db, 'collectionPath/modelId')
+        }
+      }
+      const model = new TestModel()
+      const ref = model.refRoot()
+      expect(ref).to.be.instanceOf(DocumentReference)
+      expect(ref.path).to.equal('collectionPath/modelId')
+    })
+
+    it('should work with ref like FireModel', () => {
+      class TestModel extends ObservableModel {
+        refRoot() {
+          return collection(db, 'collectionPath')
+        }
+      }
+      const model = new TestModel({ id: 'xyz' })
+      const ref = model.ref()
+      expect(ref).to.be.instanceOf(DocumentReference)
+      expect(ref.path).to.be.equal('collectionPath/xyz')
     })
   })
 })
