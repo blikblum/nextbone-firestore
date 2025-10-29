@@ -28,13 +28,13 @@ This project provides Nextbone bindings for Firebase Firestore, enabling real-ti
 
 ### Setup
 ```bash
-npm install  # or yarn install
+yarn install
 ```
 
 ### Running Tests
 ```bash
-npm test              # Run tests once
-npm run test:watch    # Run tests in watch mode
+yarn test              # Run tests once
+yarn test:watch        # Run tests in watch mode
 ```
 
 **Note:** Some tests require Firebase emulator connection. Tests may show timeouts for emulator-dependent tests when the emulator is not running. This is expected behavior for:
@@ -44,12 +44,12 @@ npm run test:watch    # Run tests in watch mode
 
 ### Linting
 ```bash
-npm run lint
+yarn lint
 ```
 
 ### Type Definitions
 ```bash
-npm run types  # Generate TypeScript definitions
+yarn types  # Generate TypeScript definitions
 ```
 
 **Note:** Type generation may show errors from dependencies (lodash-es, @types/node) - these are pre-existing and can be ignored. Type files are still generated correctly.
@@ -133,7 +133,7 @@ await user.ready()  // Wait for initial data
 
 4. **Type Safety**:
    - Use JSDoc comments for type annotations
-   - Run `npm run types` to verify type definitions generate correctly
+   - Run `yarn types` to verify type definitions generate correctly
    - TypeScript compilation errors from dependencies can be ignored
 
 5. **Backward Compatibility**:
@@ -152,7 +152,7 @@ await user.ready()  // Wait for initial data
 
 2. **Type Generation Errors**: Errors from `@types/node` and `lodash-es` during type generation are expected and don't affect functionality.
 
-3. **Package Manager**: Project uses Yarn 3+ (Berry), but npm also works. Check `packageManager` field in package.json.
+3. **Package Manager**: Project uses Yarn 3+ (Berry) exclusively. Check `packageManager` field in package.json.
 
 ## Making Pull Requests
 
