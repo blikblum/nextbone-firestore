@@ -257,6 +257,38 @@ describe('FireCollection', () => {
       })
     })
 
+    it('should clear data when ref changes to undefined', async () => {
+      let ref = createCollectionRef(db)
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+
+      const collection = new TestCollection()
+      collection.observe()
+
+      addDoc(ref, { x: 'y' })
+      await new Promise((resolve) => {
+        collection.once('update', () => {
+          resolve()
+        })
+      })
+      expect(collection.length).to.be.equal(1)
+
+      ref = undefined
+      const updateSpy = spy()
+      collection.on('update', () => {
+        expect(collection.isLoading).to.be.equal(false)
+        expect(collection.length).to.be.equal(0)
+        updateSpy()
+      })
+
+      collection.updateRef()
+      await collection.ready()
+      expect(updateSpy).to.be.calledOnce
+    })
+
     it('should set isLoading and trigger request', async () => {
       const ref = createCollectionRef(db)
       class TestCollection extends FireCollection {
@@ -273,7 +305,7 @@ describe('FireCollection', () => {
       expect(requestSpy).to.be.calledOnce
     })
 
-    it('should trigger load after observe', async () => {
+    it('should set isLoading and trigger request after standalone fetch', async () => {
       const ref = createCollectionRef(db)
       class TestCollection extends FireCollection {
         ref() {
@@ -282,16 +314,44 @@ describe('FireCollection', () => {
       }
 
       const collection = new TestCollection()
+      const requestSpy = spy()
+      collection.on('request', () => {
+        requestSpy()
+        expect(collection.isLoading).to.be.equal(true)
+      })
+
+      await collection.ready()
+
+      expect(requestSpy).to.be.calledOnce
+    })
+
+    it('should trigger load after observe', async () => {
+      const ref = createCollectionRef(db)
+      await addDoc(ref, { a: 1 })
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+
+      const collection = new TestCollection()
       const loadSpy = spy()
+      const updateSpy = spy()
       collection.on('load', loadSpy)
+      collection.on('update', () => {
+        expect(collection.isLoading).to.be.equal(false)
+        updateSpy()
+      })
       collection.observe()
       await collection.ready()
       expect(collection.isLoading).to.be.equal(false)
       expect(loadSpy).to.be.calledOnce
+      expect(updateSpy).to.be.calledOnce
     })
 
     it('should trigger load after standalone fetch', async () => {
       const ref = createCollectionRef(db)
+      await addDoc(ref, { a: 1 })
       class TestCollection extends FireCollection {
         ref() {
           return ref
@@ -300,10 +360,16 @@ describe('FireCollection', () => {
 
       const collection = new TestCollection()
       const loadSpy = spy()
+      const updateSpy = spy()
       collection.on('load', loadSpy)
+      collection.on('update', () => {
+        expect(collection.isLoading).to.be.equal(false)
+        updateSpy()
+      })
       await collection.ready()
       expect(collection.isLoading).to.be.equal(false)
       expect(loadSpy).to.be.calledOnce
+      expect(updateSpy).to.be.calledOnce
     })
 
     it('should call parse', async () => {
