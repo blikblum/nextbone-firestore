@@ -400,9 +400,9 @@ describe('ObservableModel', () => {
       expect(model.updateQuery).to.be.a('function')
     })
 
-    it('should have changeRef method', () => {
+    it('should have changeSource method', () => {
       const model = new ObservableModel()
-      expect(model.changeRef).to.be.a('function')
+      expect(model.changeSource).to.be.a('function')
     })
 
     it('should have query and rootPath methods', () => {

@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore'
 
 /**
- * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter} from 'firebase/firestore'
+ * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot} from 'firebase/firestore'
  */
 
 const optionDefaults = {
@@ -208,7 +208,7 @@ class FireCollection extends Collection {
       this.set([], { reset: true })
       this.trigger('load', this)
     }
-    this.trigger('request')
+    this.trigger('request', this)
   }
 
   /**
@@ -292,7 +292,7 @@ class FireCollection extends Collection {
      * listener would.
      */
     this.changeLoading(true)
-    this.trigger('request')
+    this.trigger('request', this)
 
     getDocs(this._query)
       .then(async (snapshot) => {
@@ -308,6 +308,10 @@ class FireCollection extends Collection {
     this.firedInitialFetch = true
   }
 
+  /**
+   * @param { QuerySnapshot } snapshot
+   * @returns
+   */
   handleSnapshot(snapshot) {
     this.logDebug(
       `handleSnapshot, ${Date.now()} docs.length: ${snapshot.docs.length}`
@@ -322,10 +326,14 @@ class FireCollection extends Collection {
     this.changeLoading(false)
     this.set(data, { parse: true, reset: true })
     this.trigger('load', this)
-    this.trigger('sync')
+    this.trigger('sync', this)
   }
 
+  /**
+   * @param {FirestoreError} err
+   */
   handleSnapshotError(err) {
+    this.changeLoading(false)
     this.trigger('load', this)
     throw new Error(`${this._query?.path} snapshot error: ${err.message}`)
   }
@@ -359,7 +367,7 @@ class FireCollection extends Collection {
     if (shouldListen) {
       this.logDebug('Subscribe listeners')
       this.changeLoading(true)
-      this.trigger('request')
+      this.trigger('request', this)
       if (this._query) {
         this.onSnapshotUnsubscribeFn = onSnapshot(
           this._query,

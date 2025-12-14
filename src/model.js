@@ -12,7 +12,7 @@ import {
 import { Model } from 'nextbone'
 
 /**
- * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter} from 'firebase/firestore'
+ * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, DocumentSnapshot, FirestoreError} from 'firebase/firestore'
  */
 
 /**
@@ -142,6 +142,10 @@ const createParamsProxy = (params, instance) => {
 class ObservableModel extends FireModel {
   constructor(attributes, options) {
     super(attributes, options)
+    /**
+     * @type { Query | DocumentReference | undefined}
+     */
+    this._query = undefined
     this._params = {}
     this._paramsProxy = createParamsProxy(this._params, this)
     this._unsubscribe = undefined
@@ -169,26 +173,21 @@ class ObservableModel extends FireModel {
       this._unsubscribe = undefined
     }
 
-    const ref = this.getQuery()
-    if (!ref) {
+    const query = this.getQuery()
+    if (!query) {
       return
     }
 
     this.changeLoading(true)
-    this._unsubscribe = onSnapshot(ref, (snapshot) => {
-      const docSnapshot =
-        ref.type === 'document' ? snapshot : this.selectSnapshot(snapshot)
-      if (!docSnapshot) {
-        this.clear()
-        return
+    this._unsubscribe = onSnapshot(
+      query,
+      (snapshot) => {
+        this.handleSnapshot(snapshot)
+      },
+      (err) => {
+        this.handleSnapshotError(err)
       }
-      if (docSnapshot.exists()) {
-        this.set({ id: docSnapshot.id, ...docSnapshot.data() }, { reset: true })
-      } else {
-        this.clear()
-      }
-      this.changeLoading(false)
-    })
+    )
   }
 
   /**
@@ -242,53 +241,79 @@ class ObservableModel extends FireModel {
       // by default batch reset calls
       this.queryPromise = Promise.resolve()
       await this.queryPromise
-      this.changeRef(this.getQuery())
+      this.changeSource(this.getQuery())
       this.queryPromise = undefined
     }
-    return this._ref
+    return this._query
   }
 
   /**
-   * @param {DocumentReference | Query} newRef
+   * @param {DocumentReference | Query} newQuery
    * @returns
    */
-  changeRef(newRef) {
-    if (!this._ref && !newRef) {
+  changeSource(newQuery) {
+    if (!this._query && !newQuery) {
       return
     }
-    if (this._ref && newRef && queryEqual(this._ref, newRef)) {
+    if (this._query && newQuery && queryEqual(this._query, newQuery)) {
       return
     }
+
+    this._query = newQuery
 
     if (this._unsubscribe) {
       this._unsubscribe()
       this._unsubscribe = undefined
     }
 
-    if (newRef) {
+    if (newQuery) {
       this.changeLoading(true)
-      this._unsubscribe = onSnapshot(newRef, (snapshot) => {
-        const docSnapshot =
-          newRef.type === 'document' ? snapshot : this.selectSnapshot(snapshot)
-        if (!docSnapshot) {
-          this.clear()
-          return
+      this._unsubscribe = onSnapshot(
+        newQuery,
+        (snapshot) => {
+          this.handleSnapshot(snapshot)
+        },
+        (err) => {
+          this.handleSnapshotError(err)
         }
+      )
+    } else {
+      this.changeLoading(false)
+      this.clear()
+      this.trigger('load', this)
+    }
+    this.trigger('request', this)
+  }
 
-        if (docSnapshot.exists()) {
-          this.set(
-            { id: docSnapshot.id, ...docSnapshot.data() },
-            { reset: true }
-          )
-        } else {
-          this.clear()
-        }
-        this.changeLoading(false)
-      })
+  /**
+   * @param {QuerySnapshot | DocumentSnapshot} snapshot
+   * @returns
+   */
+  handleSnapshot(snapshot) {
+    this.changeLoading(false)
+    const docSnapshot =
+      this._query.type === 'document' ? snapshot : this.selectSnapshot(snapshot)
+    if (!docSnapshot) {
+      this.clear()
+      return
+    }
+
+    if (docSnapshot.exists()) {
+      this.set({ id: docSnapshot.id, ...docSnapshot.data() }, { reset: true })
     } else {
       this.clear()
-      this.changeLoading(false)
     }
+    this.trigger('load', this)
+    this.trigger('sync', this)
+  }
+
+  /**
+   * @param {FirestoreError} err
+   */
+  handleSnapshotError(err) {
+    this.changeLoading(false)
+    this.trigger('load', this)
+    throw new Error(`${this._query?.path} snapshot error: ${err.message}`)
   }
 
   changeReady(isReady) {
