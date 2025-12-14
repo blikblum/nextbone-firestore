@@ -8,6 +8,7 @@ import {
   getFirestore,
   collection,
 } from 'firebase/firestore'
+import { createParamsProxy } from './helpers.js'
 
 /**
  * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot} from 'firebase/firestore'
@@ -16,22 +17,6 @@ import {
 const optionDefaults = {
   serverTimestamps: 'estimate',
   debug: false,
-}
-
-/**
- *
- * @param {Record<string, any>} params
- * @param {FireCollection} instance
- * @returns
- */
-const createParamsProxy = (params, instance) => {
-  return new Proxy(params, {
-    set(target, prop, value) {
-      target[prop] = value
-      instance.updateQuery()
-      return true
-    },
-  })
 }
 
 class FireCollection extends Collection {

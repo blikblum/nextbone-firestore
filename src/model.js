@@ -10,6 +10,7 @@ import {
   queryEqual,
 } from 'firebase/firestore'
 import { Model } from 'nextbone'
+import { createParamsProxy } from './helpers.js'
 
 /**
  * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, DocumentSnapshot, FirestoreError} from 'firebase/firestore'
@@ -122,21 +123,6 @@ class FireModel extends Model {
     }
     return response
   }
-}
-
-/**
- * @param {Record<string, any>} params
- * @param {ObservableModel} instance
- * @returns
- */
-const createParamsProxy = (params, instance) => {
-  return new Proxy(params, {
-    set(target, prop, value) {
-      target[prop] = value
-      instance.updateQuery()
-      return true
-    },
-  })
 }
 
 class ObservableModel extends FireModel {
