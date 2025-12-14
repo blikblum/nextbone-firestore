@@ -198,13 +198,13 @@ class FireCollection extends Collection {
         this.logDebug('Change collection -> update listeners')
         this.updateListeners(true)
       }
-      this.changeLoadingState(true)
+      this.changeLoading(true)
     } else {
       if (this.isObserved) {
         this.logDebug('Change collection -> clear listeners')
         this.updateListeners(false)
       }
-      this.changeLoadingState(false)
+      this.changeLoading(false)
       this.set([], { reset: true })
       this.trigger('load', this)
     }
@@ -291,7 +291,7 @@ class FireCollection extends Collection {
      * will then resolve the ready promise just like the snapshot from a
      * listener would.
      */
-    this.changeLoadingState(true)
+    this.changeLoading(true)
     this.trigger('request')
 
     getDocs(this._query)
@@ -300,7 +300,7 @@ class FireCollection extends Collection {
         this.handleSnapshot(snapshot)
       })
       .catch((err) => {
-        this.changeLoadingState(false)
+        this.changeLoading(false)
         this.trigger('load', this)
         console.error(`Fetch initial data failed: ${err.message}`)
       })
@@ -319,7 +319,7 @@ class FireCollection extends Collection {
       }),
       id: doc.id,
     }))
-    this.changeLoadingState(false)
+    this.changeLoading(false)
     this.set(data, { parse: true, reset: true })
     this.trigger('load', this)
     this.trigger('sync')
@@ -358,7 +358,7 @@ class FireCollection extends Collection {
     }
     if (shouldListen) {
       this.logDebug('Subscribe listeners')
-      this.changeLoadingState(true)
+      this.changeLoading(true)
       this.trigger('request')
       if (this._query) {
         this.onSnapshotUnsubscribeFn = onSnapshot(
@@ -378,7 +378,7 @@ class FireCollection extends Collection {
    * @param {boolean} isLoading
    * @returns
    */
-  changeLoadingState(isLoading) {
+  changeLoading(isLoading) {
     if (this.isLoading === isLoading) {
       // this.logDebug(`Ignore change loading state: ${isLoading}`);
       return

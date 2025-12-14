@@ -174,7 +174,7 @@ class ObservableModel extends FireModel {
       return
     }
 
-    this.changeLoadingState(true)
+    this.changeLoading(true)
     this._unsubscribe = onSnapshot(ref, (snapshot) => {
       const docSnapshot =
         ref.type === 'document' ? snapshot : this.selectSnapshot(snapshot)
@@ -187,7 +187,7 @@ class ObservableModel extends FireModel {
       } else {
         this.clear()
       }
-      this.changeLoadingState(false)
+      this.changeLoading(false)
     })
   }
 
@@ -266,7 +266,7 @@ class ObservableModel extends FireModel {
     }
 
     if (newRef) {
-      this.changeLoadingState(true)
+      this.changeLoading(true)
       this._unsubscribe = onSnapshot(newRef, (snapshot) => {
         const docSnapshot =
           newRef.type === 'document' ? snapshot : this.selectSnapshot(snapshot)
@@ -283,35 +283,31 @@ class ObservableModel extends FireModel {
         } else {
           this.clear()
         }
-        this.changeLoadingState(false)
+        this.changeLoading(false)
       })
     } else {
       this.clear()
-      this.changeLoadingState(false)
+      this.changeLoading(false)
     }
   }
 
   changeReady(isReady) {
+    const { readyResolveFn } = this
     if (isReady) {
-      const readyResolve = this.readyResolveFn
-      if (readyResolve) {
+      if (readyResolveFn) {
         this.readyResolveFn = undefined
-        readyResolve()
+        readyResolveFn()
       }
     } else {
-      this.initReadyResolver()
+      if (!readyResolveFn) {
+        this.readyPromise = new Promise((resolve) => {
+          this.readyResolveFn = resolve
+        })
+      }
     }
   }
 
-  initReadyResolver() {
-    if (!this.readyResolveFn) {
-      this.readyPromise = new Promise((resolve) => {
-        this.readyResolveFn = resolve
-      })
-    }
-  }
-
-  changeLoadingState(isLoading) {
+  changeLoading(isLoading) {
     if (this.isLoading === isLoading) {
       return
     }
