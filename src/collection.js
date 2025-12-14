@@ -257,23 +257,22 @@ class FireCollection extends Collection {
     }
   }
 
+  /**
+   * @param {boolean} isReady
+   */
   changeReady(isReady) {
+    const { readyResolveFn } = this
     if (isReady) {
-      const readyResolve = this.readyResolveFn
-      if (readyResolve) {
+      if (readyResolveFn) {
         this.readyResolveFn = undefined
-        readyResolve()
+        readyResolveFn()
       }
     } else {
-      this.initReadyResolver()
-    }
-  }
-
-  initReadyResolver() {
-    if (!this.readyResolveFn) {
-      this.readyPromise = new Promise((resolve) => {
-        this.readyResolveFn = resolve
-      })
+      if (!readyResolveFn) {
+        this.readyPromise = new Promise((resolve) => {
+          this.readyResolveFn = resolve
+        })
+      }
     }
   }
 
@@ -375,6 +374,10 @@ class FireCollection extends Collection {
     }
   }
 
+  /**
+   * @param {boolean} isLoading
+   * @returns
+   */
   changeLoadingState(isLoading) {
     if (this.isLoading === isLoading) {
       // this.logDebug(`Ignore change loading state: ${isLoading}`);
@@ -386,8 +389,8 @@ class FireCollection extends Collection {
   }
 
   async sync() {
-    const ref = this.ensureQuery()
-    const snapshot = await getDocs(ref)
+    const query = this.ensureQuery()
+    const snapshot = await getDocs(query)
     await this.beforeSync()
     const data = snapshot.docs.map((doc) => ({
       ...doc.data({
