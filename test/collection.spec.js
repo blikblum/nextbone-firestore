@@ -87,7 +87,7 @@ describe('FireCollection', () => {
 
     it('should return the path of the query', () => {
       class TestCollection extends FireCollection {
-        static getDb() {
+        static getFirestore() {
           return db
         }
 
@@ -109,7 +109,7 @@ describe('FireCollection', () => {
         fromFirestore() {},
       }
       class TestCollection extends FireCollection {
-        static getDb() {
+        static getFirestore() {
           return db
         }
 

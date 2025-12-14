@@ -35,7 +35,7 @@ class FireModel extends Model {
    */
   static get db() {
     if (!this._db) {
-      const dbFactory = this.getDb || getFirestore
+      const dbFactory = this.getFirestore || getFirestore
       this._db = dbFactory()
     }
     return this._db
@@ -44,7 +44,7 @@ class FireModel extends Model {
   /**
    * @type {() => Firestore}
    */
-  static getDb
+  static getFirestore
 
   /**
    * @type {FirestoreDataConverter}

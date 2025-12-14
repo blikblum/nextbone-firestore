@@ -24,7 +24,7 @@ class FireCollection extends Collection {
    */
   static get db() {
     if (!this._db) {
-      const dbFactory = this.getDb || getFirestore
+      const dbFactory = this.getFirestore || getFirestore
       this._db = dbFactory()
     }
     return this._db
@@ -33,7 +33,7 @@ class FireCollection extends Collection {
   /**
    * @type {() => Firestore}
    */
-  static getDb
+  static getFirestore
 
   /**
    * @type {FirestoreDataConverter}
