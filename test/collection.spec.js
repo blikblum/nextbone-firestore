@@ -125,7 +125,7 @@ describe('FireCollection', () => {
     })
   })
 
-  describe('updateRef', () => {
+  describe('updateQuery', () => {
     it('should call ref and return its result', async () => {
       class TestCollection extends FireCollection {
         ref() {
@@ -451,6 +451,35 @@ describe('FireCollection', () => {
               setTimeout(resolve, 100)
             })
           }
+        })
+      })
+    })
+
+    it('should not stop observing for changes when observedCount is greater than 0', async () => {
+      const ref = createCollectionRef(db)
+      class TestCollection extends FireCollection {
+        ref() {
+          return ref
+        }
+      }
+
+      const collection = new TestCollection()
+      collection.observe()
+      collection.observe()
+      addDoc(ref, { x: 'y' })
+      await new Promise((resolve) => {
+        collection.once('add', () => {
+          resolve()
+        })
+      })
+
+      collection.unobserve()
+      expect(collection.isObserved).to.be.equal(true)
+
+      addDoc(ref, { x: 'k' })
+      await new Promise((resolve) => {
+        collection.once('add', () => {
+          resolve()
         })
       })
     })

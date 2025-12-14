@@ -249,7 +249,9 @@ class FireCollection extends Collection {
   unobserve() {
     if (this.observedCount > 0) {
       this.observedCount--
-      this.updateListeners(false)
+      if (this.observedCount === 0) {
+        this.updateListeners(false)
+      }
     }
   }
 
