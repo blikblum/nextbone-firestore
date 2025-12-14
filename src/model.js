@@ -197,14 +197,14 @@ class ObservableModel extends FireModel {
    * @returns {string | undefined}
    */
   // eslint-disable-next-line no-unused-vars
-  rootPath(params) {}
+  collectionPath(params) {}
 
   /**
    * @returns {Query | undefined}
    */
   getQuery() {
     const params = this._params
-    const path = this.rootPath(params)
+    const path = this.collectionPath(params)
     if (!path) {
       return undefined
     }

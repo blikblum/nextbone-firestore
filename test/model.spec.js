@@ -405,10 +405,10 @@ describe('ObservableModel', () => {
       expect(model.changeSource).to.be.a('function')
     })
 
-    it('should have query and rootPath methods', () => {
+    it('should have query and collectionPath methods', () => {
       const model = new ObservableModel()
       expect(model.query).to.be.a('function')
-      expect(model.rootPath).to.be.a('function')
+      expect(model.collectionPath).to.be.a('function')
     })
   })
 
