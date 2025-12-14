@@ -62,8 +62,8 @@ class FireModel extends Model {
    */
   refRoot() {
     if (this.collection) {
-      this.collection.ensureRef()
-      return this.collection.getPathRef()
+      this.collection.ensureQuery()
+      return this.collection.getRef()
     }
   }
 
@@ -124,11 +124,16 @@ class FireModel extends Model {
   }
 }
 
+/**
+ * @param {Record<string, any>} params
+ * @param {ObservableModel} instance
+ * @returns
+ */
 const createParamsProxy = (params, instance) => {
   return new Proxy(params, {
     set(target, prop, value) {
       target[prop] = value
-      instance.updateRef()
+      instance.updateQuery()
       return true
     },
   })
@@ -141,7 +146,7 @@ class ObservableModel extends FireModel {
     this._paramsProxy = createParamsProxy(this._params, this)
     this._unsubscribe = undefined
     this.readyPromise = Promise.resolve()
-    this.updateRefPromise = undefined
+    this.queryPromise = undefined
   }
 
   get params() {
@@ -155,7 +160,7 @@ class ObservableModel extends FireModel {
 
     this._params = value
     this._paramsProxy = createParamsProxy(value, this)
-    this.updateRef()
+    this.updateQuery()
   }
 
   observe() {
@@ -164,7 +169,7 @@ class ObservableModel extends FireModel {
       this._unsubscribe = undefined
     }
 
-    const ref = this.getRef()
+    const ref = this.getQuery()
     if (!ref) {
       return
     }
@@ -210,9 +215,9 @@ class ObservableModel extends FireModel {
   rootPath(params) {}
 
   /**
-   * @returns {DocumentReference | Query | undefined}
+   * @returns {Query | undefined}
    */
-  getRef() {
+  getQuery() {
     const params = this._params
     const path = this.rootPath(params)
     if (!path) {
@@ -232,13 +237,13 @@ class ObservableModel extends FireModel {
     return doc(rootRef, params.id)
   }
 
-  async updateRef() {
-    if (!this.updateRefPromise) {
+  async updateQuery() {
+    if (!this.queryPromise) {
       // by default batch reset calls
-      this.updateRefPromise = Promise.resolve()
-      await this.updateRefPromise
-      this.changeRef(this.getRef())
-      this.updateRefPromise = undefined
+      this.queryPromise = Promise.resolve()
+      await this.queryPromise
+      this.changeRef(this.getQuery())
+      this.queryPromise = undefined
     }
     return this._ref
   }
@@ -315,8 +320,8 @@ class ObservableModel extends FireModel {
   }
 
   async ready() {
-    if (this.updateRefPromise) {
-      await this.updateRefPromise
+    if (this.queryPromise) {
+      await this.queryPromise
     }
 
     return this.readyPromise

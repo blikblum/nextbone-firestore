@@ -106,7 +106,7 @@ describe('FireCollection', () => {
        * @type {FirestoreDataConverter}
        */
       const converter = {
-        fromFirestore(snapshot) {},
+        fromFirestore() {},
       }
       class TestCollection extends FireCollection {
         static getDb() {
@@ -134,7 +134,7 @@ describe('FireCollection', () => {
       }
       const collection = new TestCollection()
       const refSpy = spy(collection, 'ref')
-      const ref = await collection.updateRef()
+      const ref = await collection.updateQuery()
       expect(ref.path).to.equal('collectionPath')
       expect(refSpy).to.be.calledOnce
     })
@@ -149,7 +149,7 @@ describe('FireCollection', () => {
       const collection = new TestCollection()
       stub(collection, 'ref').returns(ref)
       const querySpy = spy(collection, 'query')
-      const resolvedRef = await collection.updateRef()
+      const resolvedRef = await collection.updateQuery()
       expect(querySpy).to.be.calledOnce.and.be.calledWith(ref)
       expect(resolvedRef).to.be.instanceOf(Query)
     })
@@ -162,7 +162,7 @@ describe('FireCollection', () => {
       }
       const collection = new TestCollection()
       const querySpy = spy(collection, 'query')
-      await collection.updateRef()
+      await collection.updateQuery()
       expect(querySpy).to.not.be.called
     })
 
@@ -174,8 +174,8 @@ describe('FireCollection', () => {
       }
       const collection = new TestCollection()
       const refSpy = spy(collection, 'ref')
-      collection.updateRef()
-      await collection.updateRef()
+      collection.updateQuery()
+      await collection.updateQuery()
       expect(refSpy).to.be.calledOnce
     })
   })
@@ -192,21 +192,21 @@ describe('FireCollection', () => {
       class TestCollection extends FireCollection {}
 
       const collection = new TestCollection()
-      const updateRefSpy = spy(collection, 'updateRef')
+      const updateQuerySpy = spy(collection, 'updateQuery')
       collection.params = { test: 'x' }
 
-      expect(updateRefSpy).to.be.calledOnce
+      expect(updateQuerySpy).to.be.calledOnce
     })
 
-    it('should call updateRef when changing one of its properties', () => {
+    it('should call updateQuery when changing one of its properties', () => {
       class TestCollection extends FireCollection {}
 
       const collection = new TestCollection()
-      const updateRefSpy = spy(collection, 'updateRef')
+      const updateQuerySpy = spy(collection, 'updateQuery')
 
       collection.params.test = 'x'
 
-      expect(updateRefSpy).to.be.calledOnce
+      expect(updateQuerySpy).to.be.calledOnce
     })
 
     it('should be passed to ref and query as a param', async () => {
@@ -284,7 +284,7 @@ describe('FireCollection', () => {
         updateSpy()
       })
 
-      collection.updateRef()
+      collection.updateQuery()
       await collection.ready()
       expect(updateSpy).to.be.calledOnce
     })
@@ -509,7 +509,7 @@ describe('FireCollection', () => {
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(1)
       collection.countParam = 2
-      collection.updateRef()
+      collection.updateQuery()
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(2)
     })
@@ -540,7 +540,7 @@ describe('FireCollection', () => {
       collection.on('reset', resetSpy)
       collection.on('remove', removeSpy)
       collection.on('update', updateSpy)
-      collection.updateRef()
+      collection.updateQuery()
       await collection.ready()
       expect(collection.length).to.be.equal(0)
       expect(resetSpy).to.not.be.called
@@ -579,7 +579,7 @@ describe('FireCollection', () => {
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(1)
       collection.countParam = 2
-      collection.updateRef()
+      collection.updateQuery()
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(2)
     })
@@ -605,7 +605,7 @@ describe('FireCollection', () => {
       await collection.ready()
       expect(collection.at(0).get('count')).to.be.equal(1)
       collection.countParam = null
-      collection.updateRef()
+      collection.updateQuery()
       await collection.ready()
       expect(collection.length).to.be.equal(0)
     })
@@ -781,7 +781,7 @@ describe('FireCollection', () => {
         }
       }
       const collection = new TestCollection()
-      collection.ensureRef()
+      collection.ensureQuery()
       expect(refSpy).to.be.calledOnce
       await collection.addDocument({ foo: 'bar' })
       expect(refSpy).to.be.calledOnce

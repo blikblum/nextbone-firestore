@@ -19,11 +19,17 @@ const optionDefaults = {
   debug: false,
 }
 
+/**
+ *
+ * @param {Record<string, any>} params
+ * @param {FireCollection} instance
+ * @returns
+ */
 const createParamsProxy = (params, instance) => {
   return new Proxy(params, {
     set(target, prop, value) {
       target[prop] = value
-      instance.updateRef()
+      instance.updateQuery()
       return true
     },
   })
@@ -60,13 +66,13 @@ class FireCollection extends Collection {
     /**
      * @type {CollectionReference | undefined}
      */
-    this._pathRef = undefined
+    this._ref = undefined
     this._params = {}
     this._paramsProxy = createParamsProxy(this._params, this)
     this.sourceId = undefined
     this.listenerSourceId = undefined
     this.readyPromise = Promise.resolve()
-    this.updateRefPromise = undefined
+    this.queryPromise = undefined
     this.observedCount = 0
     this.firedInitialFetch = false
     this.options = Object.assign(Object.assign({}, optionDefaults), options)
@@ -88,7 +94,7 @@ class FireCollection extends Collection {
 
     this._params = value
     this._paramsProxy = createParamsProxy(value, this)
-    this.updateRef()
+    this.updateQuery()
   }
 
   /**
@@ -102,7 +108,8 @@ class FireCollection extends Collection {
    * @param {Record<string, any>} params
    * @return { string | undefined}
    */
-  path() {
+  // eslint-disable-next-line no-unused-vars
+  path(params) {
     // to be overriden
   }
 
@@ -110,7 +117,8 @@ class FireCollection extends Collection {
    * @param {Record<string, any>} params
    * @return { CollectionReference | undefined}
    */
-  ref() {
+  // eslint-disable-next-line no-unused-vars
+  ref(params) {
     // to be overriden
   }
 
@@ -119,7 +127,8 @@ class FireCollection extends Collection {
    * @param {Record<string, any>} params
    * @returns {Query | undefined}
    */
-  query(ref) {
+  // eslint-disable-next-line no-unused-vars
+  query(ref, params) {
     return ref
   }
 
@@ -138,34 +147,34 @@ class FireCollection extends Collection {
     } else {
       ref = this.ref(this._params)
     }
-    this._pathRef = ref
+    this._ref = ref
     return ref ? this.query(ref, this._params) : ref
   }
 
   /**
    * @returns {CollectionReference | undefined}
    */
-  getPathRef() {
-    return this._pathRef
+  getRef() {
+    return this._ref
   }
 
   /**
    * @returns {Query | undefined}
    */
-  ensureRef() {
+  ensureQuery() {
     if (!this._query) {
       this._query = this.getQuery()
     }
     return this._query
   }
 
-  async updateRef() {
-    if (!this.updateRefPromise) {
+  async updateQuery() {
+    if (!this.queryPromise) {
       // by default batch reset calls
-      this.updateRefPromise = Promise.resolve()
-      await this.updateRefPromise
+      this.queryPromise = Promise.resolve()
+      await this.queryPromise
       this.changeSource(this.getQuery())
-      this.updateRefPromise = undefined
+      this.queryPromise = undefined
     }
     return this._query
   }
@@ -207,8 +216,8 @@ class FireCollection extends Collection {
    * @returns {Promise<DocumentReference>}
    */
   async addDocument(data) {
-    this.ensureRef()
-    const ref = this._pathRef
+    this.ensureQuery()
+    const ref = this._ref
     if (!ref) {
       throw new Error(`Can not add a document to a collection that has no ref`)
     }
@@ -218,10 +227,10 @@ class FireCollection extends Collection {
 
   async ready() {
     const isListening = !!this.onSnapshotUnsubscribeFn
-    if (this.updateRefPromise) {
-      await this.updateRefPromise
+    if (this.queryPromise) {
+      await this.queryPromise
     }
-    this.ensureRef()
+    this.ensureQuery()
     if (!isListening) {
       /**
        * If the client is calling ready() but document is not being observed /
@@ -236,7 +245,7 @@ class FireCollection extends Collection {
   observe() {
     this.observedCount++
     if (this.observedCount === 1) {
-      this.ensureRef()
+      this.ensureQuery()
       this.updateListeners(true)
     }
   }
@@ -377,7 +386,7 @@ class FireCollection extends Collection {
   }
 
   async sync() {
-    const ref = this.ensureRef()
+    const ref = this.ensureQuery()
     const snapshot = await getDocs(ref)
     await this.beforeSync()
     const data = snapshot.docs.map((doc) => ({

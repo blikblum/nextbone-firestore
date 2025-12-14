@@ -38,9 +38,9 @@ class PatientsQuery extends FireCollection {
     return result
   }
 
-  ref(params) {
-    // return the collection ref
-    return collection(db, `clinics/${params.clinicId}/patients`)
+  path(params) {
+    // return the collection path
+    return `clinics/${params.clinicId}/patients`
   }
 }
 

@@ -395,9 +395,9 @@ describe('ObservableModel', () => {
       expect(model.ready).to.be.a('function')
     })
 
-    it('should have updateRef method', () => {
+    it('should have updateQuery method', () => {
       const model = new ObservableModel()
-      expect(model.updateRef).to.be.a('function')
+      expect(model.updateQuery).to.be.a('function')
     })
 
     it('should have changeRef method', () => {
