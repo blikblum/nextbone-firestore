@@ -1,5 +1,4 @@
 import { Collection } from 'nextbone'
-import { FireModel } from './model.js'
 import {
   getDocs,
   addDoc,
@@ -385,6 +384,4 @@ class FireCollection extends Collection {
   }
 }
 
-FireCollection.model = FireModel
-
-export { FireCollection, FireModel }
+export { FireCollection }
