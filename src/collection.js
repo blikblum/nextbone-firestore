@@ -1,5 +1,4 @@
 import { Collection } from 'nextbone'
-import { uniqueId } from 'lodash-es'
 import { FireModel } from './model.js'
 import {
   getDocs,
@@ -69,8 +68,6 @@ class FireCollection extends Collection {
     this._ref = undefined
     this._params = {}
     this._paramsProxy = createParamsProxy(this._params, this)
-    this.sourceId = undefined
-    this.listenerSourceId = undefined
     this.readyPromise = Promise.resolve()
     this.queryPromise = undefined
     this.observedCount = 0
@@ -193,7 +190,6 @@ class FireCollection extends Collection {
     this._query = newQuery
     if (newQuery) {
       this.logDebug('Setting new ref source')
-      this.sourceId = uniqueId('s')
       if (this.isObserved) {
         this.logDebug('Change collection -> update listeners')
         this.updateListeners(true)
@@ -349,21 +345,14 @@ class FireCollection extends Collection {
   }
 
   updateListeners(shouldListen) {
-    const isListening = !!this.onSnapshotUnsubscribeFn
-    if (
-      shouldListen &&
-      isListening &&
-      this.sourceId === this.listenerSourceId
-    ) {
-      // this.logDebug("Ignore update listeners");
-      return
-    }
-    if (isListening) {
+    const { onSnapshotUnsubscribeFn } = this
+
+    if (onSnapshotUnsubscribeFn) {
       this.logDebug('Unsubscribe listeners')
-      this.onSnapshotUnsubscribeFn()
+      onSnapshotUnsubscribeFn()
       this.onSnapshotUnsubscribeFn = undefined
-      this.listenerSourceId = undefined
     }
+
     if (shouldListen) {
       this.logDebug('Subscribe listeners')
       this.changeLoading(true)
@@ -378,7 +367,6 @@ class FireCollection extends Collection {
           (err) => this.handleSnapshotError(err)
         )
       }
-      this.listenerSourceId = this.sourceId
     }
   }
 
