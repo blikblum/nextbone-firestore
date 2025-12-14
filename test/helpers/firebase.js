@@ -2,6 +2,9 @@ import { collection } from 'firebase/firestore'
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { nanoid } from 'nanoid'
 
+/**
+ * @type {import('@firebase/rules-unit-testing').RulesTestEnvironment | undefined}
+ */
 let globalTestEnv
 
 async function getTestEnv() {
@@ -22,8 +25,8 @@ async function getTestContext() {
   return testEnv.authenticatedContext('alice', { email: 'alice@example.com' })
 }
 
-export const createCollectionRef = (db) => {
-  return collection(db, `collection-${nanoid()}`)
+export const createCollectionRef = (db, path = `collection-${nanoid()}`) => {
+  return collection(db, path)
 }
 
 export const getDb = async () => {
@@ -33,12 +36,10 @@ export const getDb = async () => {
 
 export const clearFirestoreData = async () => {
   const testEnv = await getTestEnv()
-  // awaiting leads to FetchError: request to http://localhost:8080/emulator/v1/projects/nextbone-firestore-test/databases/(default)/documents failed, reason: connect ECONNREFUSED ::1:8080
-  // await testEnv.clearFirestore()
-  testEnv.clearFirestore()
+  await testEnv.clearFirestore()
 }
 
 export const cleanup = async () => {
   const testEnv = await getTestEnv()
-  testEnv.cleanup()
+  await testEnv.cleanup()
 }
