@@ -30,20 +30,20 @@ describe('FireModel', () => {
     db = await getDb()
   })
 
-  describe('refRoot', () => {
+  describe('collectionRef', () => {
     it('should return undefined by default', () => {
       const model = new FireModel()
-      expect(model.refRoot()).to.be.undefined
+      expect(model.collectionRef()).to.be.undefined
     })
 
     it('should return the declared ref', () => {
       class TestModel extends FireModel {
-        refRoot() {
+        collectionRef() {
           return doc(db, 'collectionPath/modelId')
         }
       }
       const model = new TestModel()
-      const ref = model.refRoot()
+      const ref = model.collectionRef()
       expect(ref).to.be.instanceOf(DocumentReference)
       expect(ref.path).to.equal('collectionPath/modelId')
     })
@@ -54,7 +54,7 @@ describe('FireModel', () => {
       sinon
         .stub(model.collection, 'ref')
         .callsFake(() => collection(db, 'mycollection'))
-      const ref = model.refRoot()
+      const ref = model.collectionRef()
       expect(ref).to.be.instanceOf(CollectionReference)
       expect(ref.path).to.equal('mycollection')
     })
@@ -65,9 +65,9 @@ describe('FireModel', () => {
       sinon
         .stub(model.collection, 'ref')
         .callsFake(() => collection(db, 'mycollection'))
-      model.refRoot()
+      model.collectionRef()
       expect(model.collection.ref).to.be.calledOnce
-      model.refRoot()
+      model.collectionRef()
       expect(model.collection.ref).to.be.calledOnce
     })
   })
@@ -80,7 +80,7 @@ describe('FireModel', () => {
 
     it('should return refRoot if declared', () => {
       class TestModel extends FireModel {
-        refRoot() {
+        collectionRef() {
           return collection(db, 'collectionPath')
         }
       }
@@ -104,7 +104,7 @@ describe('FireModel', () => {
 
     it('should return a doc ref children of refRoot when is not new', () => {
       class TestModel extends FireModel {
-        refRoot() {
+        collectionRef() {
           return collection(db, 'collectionPath')
         }
       }
@@ -139,7 +139,7 @@ describe('FireModel', () => {
       const collectionRef = createCollectionRef(db)
 
       class TestModel extends FireModel {
-        refRoot() {
+        collectionRef() {
           return collectionRef
         }
       }
@@ -369,7 +369,7 @@ describe('ObservableModel', () => {
 
     it('should have refRoot and ref methods from FireModel', () => {
       const model = new ObservableModel()
-      expect(model.refRoot).to.be.a('function')
+      expect(model.collectionRef).to.be.a('function')
       expect(model.ref).to.be.a('function')
     })
 
@@ -413,21 +413,21 @@ describe('ObservableModel', () => {
   })
 
   describe('basic FireModel functionality', () => {
-    it('should work with refRoot like FireModel', () => {
+    it('should work with collectionRef like FireModel', () => {
       class TestModel extends ObservableModel {
-        refRoot() {
+        collectionRef() {
           return doc(db, 'collectionPath/modelId')
         }
       }
       const model = new TestModel()
-      const ref = model.refRoot()
+      const ref = model.collectionRef()
       expect(ref).to.be.instanceOf(DocumentReference)
       expect(ref.path).to.equal('collectionPath/modelId')
     })
 
     it('should work with ref like FireModel', () => {
       class TestModel extends ObservableModel {
-        refRoot() {
+        collectionRef() {
           return collection(db, 'collectionPath')
         }
       }

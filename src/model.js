@@ -23,8 +23,8 @@ import { createParamsProxy } from './helpers.js'
  */
 const getDocRef = (model, method) => {
   if (method === 'create') {
-    const refRoot = model.refRoot()
-    return refRoot ? doc(refRoot) : undefined
+    const collectionRef = model.collectionRef()
+    return collectionRef ? doc(collectionRef) : undefined
   }
   return model.ref()
 }
@@ -61,7 +61,7 @@ class FireModel extends Model {
   /**
    * @returns {CollectionReference | undefined}
    */
-  refRoot() {
+  collectionRef() {
     if (this.collection) {
       this.collection.ensureQuery()
       return this.collection.getRef()
@@ -72,11 +72,11 @@ class FireModel extends Model {
    * @returns {DocumentReference | CollectionReference | undefined}
    */
   ref() {
-    const refRoot = this.refRoot()
-    if (refRoot && !this.isNew()) {
-      return doc(refRoot, this.id)
+    const collectionRef = this.collectionRef()
+    if (collectionRef && !this.isNew()) {
+      return doc(collectionRef, this.id)
     }
-    return refRoot
+    return collectionRef
   }
 
   /**

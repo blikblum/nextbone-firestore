@@ -12,7 +12,7 @@ This project provides Nextbone bindings for Firebase Firestore, enabling real-ti
 
    - Extends `Model` from nextbone
    - Provides core sync functionality for Firestore CRUD operations
-   - Methods: `sync()`, `ref()`, `refRoot()`, `beforeSync()`
+   - Methods: `sync()`, `ref()`, `collectionRef()`, `beforeSync()`
    - Use when you only need basic Firestore sync without observable features
 
 2. **ObservableModel** (Observable Subclass)
@@ -100,7 +100,7 @@ yarn types  # Generate TypeScript definitions
 
 ```javascript
 class User extends FireModel {
-  refRoot() {
+  collectionRef() {
     return collection(db, 'users')
   }
 }
