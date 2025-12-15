@@ -31,27 +31,6 @@ const getDocRef = (model, method) => {
 
 class FireModel extends Model {
   /**
-   * @returns {Firestore}
-   */
-  static get db() {
-    if (!this._db) {
-      const dbFactory = this.getFirestore || getFirestore
-      this._db = dbFactory()
-    }
-    return this._db
-  }
-
-  /**
-   * @type {() => Firestore}
-   */
-  static getFirestore
-
-  /**
-   * @type {FirestoreDataConverter}
-   */
-  static converter
-
-  /**
    * @return {Promise<void> | undefined}
    */
   beforeSync() {
@@ -126,6 +105,27 @@ class FireModel extends Model {
 }
 
 class ObservableModel extends FireModel {
+  /**
+   * @returns {Firestore}
+   */
+  static get db() {
+    if (!this._db) {
+      const dbFactory = this.getFirestore || getFirestore
+      this._db = dbFactory()
+    }
+    return this._db
+  }
+
+  /**
+   * @type {() => Firestore}
+   */
+  static getFirestore
+
+  /**
+   * @type {FirestoreDataConverter}
+   */
+  static converter
+
   constructor(attributes, options) {
     super(attributes, options)
     /**
@@ -137,6 +137,7 @@ class ObservableModel extends FireModel {
     this._unsubscribe = undefined
     this.readyPromise = Promise.resolve()
     this.queryPromise = undefined
+    this.observedCount = 0
   }
 
   get params() {
@@ -153,27 +154,24 @@ class ObservableModel extends FireModel {
     this.updateQuery()
   }
 
+  get isObserved() {
+    return this.observedCount > 0
+  }
+
   observe() {
-    if (this._unsubscribe) {
-      this._unsubscribe()
-      this._unsubscribe = undefined
+    this.observedCount++
+    if (this.observedCount === 1) {
+      this.updateListeners(true)
     }
+  }
 
-    const query = this.getQuery()
-    if (!query) {
-      return
-    }
-
-    this.changeLoading(true)
-    this._unsubscribe = onSnapshot(
-      query,
-      (snapshot) => {
-        this.handleSnapshot(snapshot)
-      },
-      (err) => {
-        this.handleSnapshotError(err)
+  unobserve() {
+    if (this.observedCount > 0) {
+      this.observedCount--
+      if (this.observedCount === 0) {
+        this.updateListeners(false)
       }
-    )
+    }
   }
 
   /**
@@ -216,7 +214,14 @@ class ObservableModel extends FireModel {
     const rootRef = collection(db, path).withConverter(converter)
 
     if (!params.id) {
-      return this.query(rootRef, params)
+      const queryResult = this.query(rootRef, params)
+      if (!queryResult) {
+        throw new Error(
+          `FireModel: query() must return a Query when no id param is provided`
+        )
+      }
+
+      return queryResult
     }
 
     return doc(rootRef, params.id)
@@ -238,37 +243,56 @@ class ObservableModel extends FireModel {
    * @returns
    */
   changeSource(newQuery) {
-    if (!this._query && !newQuery) {
+    const { _query, isObserved } = this
+    if (!_query && !newQuery) {
       return
     }
-    if (this._query && newQuery && queryEqual(this._query, newQuery)) {
+    if (_query && newQuery && queryEqual(_query, newQuery)) {
       return
     }
 
     this._query = newQuery
 
-    if (this._unsubscribe) {
-      this._unsubscribe()
-      this._unsubscribe = undefined
-    }
-
     if (newQuery) {
-      this.changeLoading(true)
-      this._unsubscribe = onSnapshot(
-        newQuery,
-        (snapshot) => {
-          this.handleSnapshot(snapshot)
-        },
-        (err) => {
-          this.handleSnapshotError(err)
-        }
-      )
+      if (isObserved) {
+        this.updateListeners(true)
+      }
     } else {
+      if (isObserved) {
+        this.updateListeners(false)
+      }
       this.changeLoading(false)
       this.clear()
       this.trigger('load', this)
     }
     this.trigger('request', this)
+  }
+
+  /**
+   * @param {boolean} shouldListen
+   */
+  updateListeners(shouldListen) {
+    const { _unsubscribe } = this
+
+    if (_unsubscribe) {
+      _unsubscribe()
+      this._unsubscribe = undefined
+    }
+
+    if (shouldListen) {
+      this.changeLoading(true)
+      if (this._query) {
+        this._unsubscribe = onSnapshot(
+          this._query,
+          (snapshot) => {
+            this.handleSnapshot(snapshot)
+          },
+          (err) => {
+            this.handleSnapshotError(err)
+          }
+        )
+      }
+    }
   }
 
   /**

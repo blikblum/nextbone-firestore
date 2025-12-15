@@ -353,6 +353,12 @@ describe('ObservableModel', () => {
 
   before(async () => {
     db = await getDb()
+
+    ObservableModel.getFirestore = () => db
+  })
+
+  after(() => {
+    ObservableModel.getFirestore = undefined
   })
 
   describe('inheritance', () => {
@@ -412,29 +418,405 @@ describe('ObservableModel', () => {
     })
   })
 
-  describe('basic FireModel functionality', () => {
-    it('should work with collectionRef like FireModel', () => {
-      class TestModel extends ObservableModel {
-        collectionRef() {
-          return doc(db, 'collectionPath/modelId')
-        }
-      }
-      const model = new TestModel()
-      const ref = model.collectionRef()
-      expect(ref).to.be.instanceOf(DocumentReference)
-      expect(ref.path).to.equal('collectionPath/modelId')
+  describe('collectionPath', () => {
+    before(async () => {
+      await initializeDataset()
     })
 
-    it('should work with ref like FireModel', () => {
-      class TestModel extends ObservableModel {
-        collectionRef() {
-          return collection(db, 'collectionPath')
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should define the model collection path from params', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        // query must be defined when no id is provided
+        query(ref) {
+          return ref
         }
       }
-      const model = new TestModel({ id: 'xyz' })
-      const ref = model.ref()
-      expect(ref).to.be.instanceOf(DocumentReference)
-      expect(ref.path).to.be.equal('collectionPath/xyz')
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+
+      model.observe()
+      await model.ready()
+
+      // Should have loaded data from the first doc (default selectSnapshot behavior)
+      expect(model.get('title')).to.equal('Document 1')
+      expect(model.get('count')).to.equal(1)
+      model._unsubscribe?.()
+    })
+
+    it('should throw error if query() does not return Query when no id is provided', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        // query not defined or does not return anything
+        query() {
+          return undefined
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+
+      let caughtError = null
+      try {
+        model.getQuery()
+      } catch (err) {
+        caughtError = err
+      }
+
+      expect(caughtError).to.be.an('error')
+      expect(caughtError.message).to.equal(
+        'FireModel: query() must return a Query when no id param is provided'
+      )
+      model._unsubscribe?.()
+    })
+
+    it('should return undefined query when collectionPath returns undefined', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+      }
+
+      const model = new TestObservableModel()
+      // params.collectionName is not set, so collectionPath returns undefined
+      const query = model.getQuery()
+      expect(query).to.be.undefined
+    })
+
+    it('should support dynamic collection paths', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          if (params.orgId) {
+            return `organizations/${params.orgId}/items`
+          }
+          return undefined
+        }
+
+        query(ref) {
+          return ref
+        }
+      }
+
+      const model = new TestObservableModel()
+
+      // Initially no path
+      expect(model.getQuery()).to.be.undefined
+
+      // After setting orgId, path is defined (though collection may not exist)
+      model.params.orgId = 'org123'
+      const query = model.getQuery()
+      expect(query).to.not.be.undefined
+    })
+  })
+
+  describe('params.id for document selection', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should construct full doc path when params.id exists', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+      model.params.id = '2' // Document with count: 2
+
+      model.observe()
+      await model.ready()
+
+      expect(model.id).to.equal('2')
+      expect(model.get('title')).to.equal('Document 2')
+      expect(model.get('count')).to.equal(2)
+      expect(model.get('type')).to.equal('even')
+      model._unsubscribe?.()
+    })
+
+    it('should update model when params.id changes', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+      model.params.id = '1'
+
+      model.observe()
+      await model.ready()
+
+      expect(model.id).to.equal('1')
+      expect(model.get('title')).to.equal('Document 1')
+
+      // Change to different document
+      model.params.id = '3'
+      await model.ready()
+
+      expect(model.id).to.equal('3')
+      expect(model.get('title')).to.equal('Document 3')
+      expect(model.get('type')).to.equal('odd')
+      model._unsubscribe?.()
+    })
+
+    it('should clear model when params.id points to non-existent document', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+      model.params.id = 'nonexistent'
+
+      model.observe()
+      await model.ready()
+
+      expect(model.id).to.be.undefined
+      expect(model.get('title')).to.be.undefined
+      model._unsubscribe?.()
+    })
+  })
+
+  describe('selectSnapshot default behavior', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should select first document when params.id is not defined', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        query(ref) {
+          return ref
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+
+      model.observe()
+      await model.ready()
+
+      // Default selectSnapshot returns first doc
+      expect(model.get('title')).to.equal('Document 1')
+      expect(model.get('count')).to.equal(1)
+      model._unsubscribe?.()
+    })
+
+    it('should clear model when collection is empty', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        query(ref) {
+          return ref
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = 'emptyCollection'
+
+      model.observe()
+      await model.ready()
+
+      expect(model.id).to.be.undefined
+      expect(model.get('title')).to.be.undefined
+      model._unsubscribe?.()
+    })
+  })
+
+  describe('selectSnapshot override', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should allow overriding selectSnapshot to select different document', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        query(ref) {
+          return ref
+        }
+
+        selectSnapshot(snapshot) {
+          // Select last document instead of first
+          const docs = snapshot.docs
+          return docs[docs.length - 1]
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+
+      model.observe()
+      await model.ready()
+
+      // Should have selected last document (Document 4)
+      expect(model.get('title')).to.equal('Document 4')
+      expect(model.get('count')).to.equal(4)
+      model._unsubscribe?.()
+    })
+
+    it('should allow selectSnapshot to filter based on criteria', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        query(ref) {
+          return ref
+        }
+
+        selectSnapshot(snapshot) {
+          // Select document with highest count
+          const docs = snapshot.docs
+          let maxDoc = docs[0]
+          for (const doc of docs) {
+            if (doc.data().count > maxDoc.data().count) {
+              maxDoc = doc
+            }
+          }
+          return maxDoc
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+
+      model.observe()
+      await model.ready()
+
+      expect(model.get('count')).to.equal(4)
+      expect(model.get('title')).to.equal('Document 4')
+      model._unsubscribe?.()
+    })
+
+    it('should clear model when selectSnapshot returns undefined', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        query(ref) {
+          return ref
+        }
+
+        selectSnapshot() {
+          // Return undefined to simulate no selection
+          return undefined
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+
+      model.observe()
+      await model.ready()
+
+      expect(model.id).to.be.undefined
+      expect(model.get('title')).to.be.undefined
+      model._unsubscribe?.()
+    })
+
+    it('should use selectSnapshot with query results', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        query(ref, params) {
+          if (params.type) {
+            return query(ref, orderBy('count'))
+          }
+          return ref
+        }
+
+        selectSnapshot(snapshot) {
+          // Select second document from query results
+          return snapshot.docs[1]
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+      model.params.type = 'any' // trigger query with orderBy
+
+      model.observe()
+      await model.ready()
+
+      // With orderBy('count'), docs are ordered 1,2,3,4 - second is count: 2
+      expect(model.get('count')).to.equal(2)
+      expect(model.get('title')).to.equal('Document 2')
+      model._unsubscribe?.()
+    })
+  })
+
+  describe('query method', () => {
+    before(async () => {
+      await initializeDataset()
+    })
+
+    after(async () => {
+      await clearDataset()
+    })
+
+    it('should apply query filters when params.id is not set', async () => {
+      class TestObservableModel extends ObservableModel {
+        collectionPath(params) {
+          return params.collectionName
+        }
+
+        query(ref, params) {
+          if (params.sortBy) {
+            return query(ref, orderBy(params.sortBy, 'desc'))
+          }
+          return ref
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+      model.params.sortBy = 'count'
+
+      model.observe()
+      await model.ready()
+
+      // With orderBy desc, first doc should be Document 4 (highest count)
+      expect(model.get('title')).to.equal('Document 4')
+      expect(model.get('count')).to.equal(4)
+      model._unsubscribe?.()
     })
   })
 })
