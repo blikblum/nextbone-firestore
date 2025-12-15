@@ -1,17 +1,5 @@
 export class FireModel extends Model<any, import("nextbone").ModelSetOptions, any> {
-    /**
-     * @returns {Firestore}
-     */
-    static get db(): Firestore;
-    /**
-     * @type {() => Firestore}
-     */
-    static getDb: () => Firestore;
-    /**
-     * @type {FirestoreDataConverter}
-     */
-    static converter: FirestoreDataConverter;
-    constructor(attributes?: any, options?: any);
+    constructor(attributes?: Partial<any>, options?: any);
     /**
      * @return {Promise<void> | undefined}
      */
@@ -19,7 +7,7 @@ export class FireModel extends Model<any, import("nextbone").ModelSetOptions, an
     /**
      * @returns {CollectionReference | undefined}
      */
-    refRoot(): CollectionReference | undefined;
+    collectionRef(): CollectionReference | undefined;
     /**
      * @returns {DocumentReference | CollectionReference | undefined}
      */
@@ -32,14 +20,34 @@ export class FireModel extends Model<any, import("nextbone").ModelSetOptions, an
     sync(method: string, options: any): Promise<any>;
 }
 export class ObservableModel extends FireModel {
+    /**
+     * @returns {Firestore}
+     */
+    static get db(): Firestore;
+    /**
+     * @type {() => Firestore}
+     */
+    static getFirestore: () => Firestore;
+    /**
+     * @type {FirestoreDataConverter}
+     */
+    static converter: FirestoreDataConverter<any, import("@firebase/firestore").DocumentData>;
+    constructor(attributes: any, options: any);
+    /**
+     * @type { Query | DocumentReference | undefined}
+     */
+    _query: Query | DocumentReference | undefined;
     _params: {};
-    _paramsProxy: any;
+    _paramsProxy: Record<string, any>;
     _unsubscribe: import("@firebase/firestore").Unsubscribe;
     readyPromise: Promise<void>;
-    updateRefPromise: Promise<void>;
-    set params(value: any);
-    get params(): any;
+    queryPromise: Promise<void>;
+    observedCount: number;
+    set params(value: Record<string, any>);
+    get params(): Record<string, any>;
+    get isObserved(): boolean;
     observe(): void;
+    unobserve(): void;
     /**
      * @param {QuerySnapshot} snapshot
      * @returns {DocumentSnapshot | undefined}
@@ -55,23 +63,42 @@ export class ObservableModel extends FireModel {
      * @param {Record<string, any>} params
      * @returns {string | undefined}
      */
-    rootPath(params: Record<string, any>): string | undefined;
+    collectionPath(params: Record<string, any>): string | undefined;
     /**
-     * @returns {DocumentReference | Query | undefined}
+     * @returns {Query | undefined}
      */
-    getRef(): DocumentReference | Query | undefined;
-    updateRef(): Promise<any>;
+    getQuery(): Query | undefined;
+    updateQuery(): Promise<Query<import("@firebase/firestore").DocumentData, import("@firebase/firestore").DocumentData> | DocumentReference<import("@firebase/firestore").DocumentData, import("@firebase/firestore").DocumentData>>;
     /**
-     * @param {DocumentReference | Query} newRef
+     * @param {DocumentReference | Query} newQuery
      * @returns
      */
-    changeRef(newRef: DocumentReference | Query): void;
+    changeSource(newQuery: DocumentReference | Query): void;
+    /**
+     * @param {boolean} shouldListen
+     */
+    updateListeners(shouldListen: boolean): void;
+    /**
+     * @param {QuerySnapshot | DocumentSnapshot} snapshot
+     * @returns
+     */
+    handleSnapshot(snapshot: QuerySnapshot | DocumentSnapshot): void;
+    /**
+     * @param {FirestoreError} err
+     */
+    handleSnapshotError(err: FirestoreError): void;
     changeReady(isReady: any): void;
     readyResolveFn: (value: any) => void;
-    initReadyResolver(): void;
-    changeLoadingState(isLoading: any): void;
-    isLoading: any;
+    changeLoading(isLoading: any): void;
     ready(): Promise<void>;
 }
 import { Model } from 'nextbone';
+import type { CollectionReference } from 'firebase/firestore';
+import type { DocumentReference } from 'firebase/firestore';
+import type { Query } from 'firebase/firestore';
+import type { QuerySnapshot } from 'firebase/firestore';
+import type { DocumentSnapshot } from 'firebase/firestore';
+import type { FirestoreError } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
+import type { FirestoreDataConverter } from 'firebase/firestore';
 //# sourceMappingURL=model.d.ts.map

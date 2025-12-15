@@ -6,14 +6,12 @@ export class FireCollection extends Collection<import("nextbone").Model<any, imp
     /**
      * @type {() => Firestore}
      */
-    static getDb: () => Firestore;
+    static getFirestore: () => Firestore;
     /**
      * @type {FirestoreDataConverter}
      */
-    static converter: FirestoreDataConverter;
-    constructor({ models, ...options }?: {
-        models: any;
-    });
+    static converter: FirestoreDataConverter<any, import("@firebase/firestore").DocumentData>;
+    constructor({ models, ...options }?: {});
     /**
      * @type {Query | undefined}
      */
@@ -21,13 +19,11 @@ export class FireCollection extends Collection<import("nextbone").Model<any, imp
     /**
      * @type {CollectionReference | undefined}
      */
-    _pathRef: CollectionReference | undefined;
+    _ref: CollectionReference | undefined;
     _params: {};
-    _paramsProxy: any;
-    sourceId: any;
-    listenerSourceId: any;
+    _paramsProxy: Record<string, any>;
     readyPromise: Promise<void>;
-    updateRefPromise: Promise<void>;
+    queryPromise: Promise<void>;
     observedCount: number;
     firedInitialFetch: boolean;
     options: {
@@ -36,8 +32,8 @@ export class FireCollection extends Collection<import("nextbone").Model<any, imp
     };
     isDebugEnabled: any;
     get isObserved(): boolean;
-    set params(value: any);
-    get params(): any;
+    set params(value: Record<string, any>);
+    get params(): Record<string, any>;
     /**
      * @return {Promise<void> | undefined}
      */
@@ -46,18 +42,18 @@ export class FireCollection extends Collection<import("nextbone").Model<any, imp
      * @param {Record<string, any>} params
      * @return { string | undefined}
      */
-    path(): string | undefined;
+    path(params: Record<string, any>): string | undefined;
     /**
      * @param {Record<string, any>} params
      * @return { CollectionReference | undefined}
      */
-    ref(): CollectionReference | undefined;
+    ref(params: Record<string, any>): CollectionReference | undefined;
     /**
      * @param {CollectionReference} ref
      * @param {Record<string, any>} params
      * @returns {Query | undefined}
      */
-    query(ref: CollectionReference): Query | undefined;
+    query(ref: CollectionReference, params: Record<string, any>): Query | undefined;
     /**
      * @returns {Query | undefined}
      */
@@ -65,12 +61,12 @@ export class FireCollection extends Collection<import("nextbone").Model<any, imp
     /**
      * @returns {CollectionReference | undefined}
      */
-    getPathRef(): CollectionReference | undefined;
+    getRef(): CollectionReference | undefined;
     /**
      * @returns {Query | undefined}
      */
-    ensureRef(): Query | undefined;
-    updateRef(): Promise<any>;
+    ensureQuery(): Query | undefined;
+    updateQuery(): Promise<Query<import("@firebase/firestore").DocumentData, import("@firebase/firestore").DocumentData>>;
     changeSource(newQuery: any): void;
     /**
      * @param {*} data
@@ -80,24 +76,38 @@ export class FireCollection extends Collection<import("nextbone").Model<any, imp
     ready(): Promise<void>;
     observe(): void;
     unobserve(): void;
-    changeReady(isReady: any): void;
+    /**
+     * @param {boolean} isReady
+     */
+    changeReady(isReady: boolean): void;
     readyResolveFn: (value: any) => void;
-    initReadyResolver(): void;
     fetchInitialData(): void;
-    handleSnapshot(snapshot: any): void;
-    handleSnapshotError(err: any): void;
+    /**
+     * @param { QuerySnapshot } snapshot
+     * @returns
+     */
+    handleSnapshot(snapshot: QuerySnapshot): void;
+    /**
+     * @param {FirestoreError} err
+     */
+    handleSnapshotError(err: FirestoreError): void;
     logDebug(message: any): void;
     updateListeners(shouldListen: any): void;
     onSnapshotUnsubscribeFn: import("@firebase/firestore").Unsubscribe;
-    changeLoadingState(isLoading: any): void;
-    isLoading: any;
-    sync(): Promise<any[]>;
+    /**
+     * @param {boolean} isLoading
+     * @returns
+     */
+    changeLoading(isLoading: boolean): void;
+    sync(): Promise<{
+        id: string;
+    }[]>;
 }
-export namespace FireCollection {
-    export let _db: Firestore;
-    export { FireModel as model };
-}
-import { FireModel } from './model.js';
 import { Collection } from 'nextbone';
-export { FireModel };
+import type { Query } from 'firebase/firestore';
+import type { CollectionReference } from 'firebase/firestore';
+import type { DocumentReference } from 'firebase/firestore';
+import type { QuerySnapshot } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
+import type { FirestoreDataConverter } from 'firebase/firestore';
 //# sourceMappingURL=collection.d.ts.map
