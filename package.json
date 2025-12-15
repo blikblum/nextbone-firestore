@@ -1,6 +1,6 @@
 {
   "name": "nextbone-firestore",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Classes to use Firestore with Nextbone",
   "repository": "blikblum/nextbone-firestore",
   "author": "Luiz Américo Pereira Câmara",
