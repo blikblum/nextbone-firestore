@@ -13,6 +13,7 @@ import { Model } from 'nextbone'
 import { createParamsProxy } from './helpers.js'
 
 /**
+ * @import { ModelSetOptions, Model } from 'nextbone'
  * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, DocumentSnapshot, FirestoreError} from 'firebase/firestore'
  */
 
@@ -104,6 +105,12 @@ class FireModel extends Model {
   }
 }
 
+/**
+ * NextBone model synchronized with a Firestore document.
+ * @template {Record<string, any>} [TAttributes=Record<string, any>]
+ * @template {Record<string, any>} [Params=Record<string, any>]
+ * @extends {FireModel<TAttributes, ModelSetOptions, any>}
+ */
 class ObservableModel extends FireModel {
   /**
    * @returns {Firestore}
@@ -132,7 +139,9 @@ class ObservableModel extends FireModel {
      * @type { Query | DocumentReference | undefined}
      */
     this._query = undefined
+    /** @type {Params} */
     this._params = {}
+    /** @type {Params} */
     this._paramsProxy = createParamsProxy(this._params, this)
     this._unsubscribe = undefined
     this.readyPromise = Promise.resolve()
@@ -140,10 +149,12 @@ class ObservableModel extends FireModel {
     this.observedCount = 0
   }
 
+  /** @returns {Params} */
   get params() {
     return this._paramsProxy
   }
 
+  /** @param {Params} value */
   set params(value) {
     if (!value || typeof value !== 'object') {
       throw new Error(`FireCollection: params should be an object`)
@@ -183,15 +194,19 @@ class ObservableModel extends FireModel {
   }
 
   /**
+   * Optionally apply query constraints to a path ref and return a Query.
+   * Override in subclasses.
    * @param {DocumentReference} ref
-   * @param {Record<string, any>} params
+   * @param {Params} [params]
    * @returns {Query | undefined}
    */
   // eslint-disable-next-line no-unused-vars
   query(ref, params) {}
 
   /**
-   * @param {Record<string, any>} params
+   * Should return the path for this collection.
+   * Override in subclasses.
+   * @param {Params} [params]
    * @returns {string | undefined}
    */
   // eslint-disable-next-line no-unused-vars

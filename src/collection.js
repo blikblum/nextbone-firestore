@@ -10,14 +10,22 @@ import {
 import { createParamsProxy } from './helpers.js'
 
 /**
- * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot} from 'firebase/firestore'
+ * @import { Model } from 'nextbone'
+ * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, SnapshotOptions} from 'firebase/firestore'
  */
 
+/** @type {{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }} */
 const optionDefaults = {
   serverTimestamps: 'estimate',
   debug: false,
 }
 
+/**
+ * NextBone collection synchronized with a Firestore collection or query.
+ * @template {Model} [TModel=Model]
+ * @template {Record<string, any>} [Params=Record<string, any>]
+ * @extends {Collection<TModel>}
+ */
 class FireCollection extends Collection {
   /**
    * @returns {Firestore}
@@ -40,6 +48,9 @@ class FireCollection extends Collection {
    */
   static converter
 
+  /**
+   * @param {{ models?: any } & Partial<{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }>} [options]
+   */
   constructor({ models, ...options } = {}) {
     super(models, options)
     /**
@@ -50,7 +61,9 @@ class FireCollection extends Collection {
      * @type {CollectionReference | undefined}
      */
     this._ref = undefined
+    /** @type {Params} */
     this._params = {}
+    /** @type {Params} */
     this._paramsProxy = createParamsProxy(this._params, this)
     this.readyPromise = Promise.resolve()
     this.queryPromise = undefined
@@ -64,10 +77,12 @@ class FireCollection extends Collection {
     return this.observedCount > 0
   }
 
+  /** @returns {Params} */
   get params() {
     return this._paramsProxy
   }
 
+  /** @param {Params} value */
   set params(value) {
     if (!value || typeof value !== 'object') {
       throw new Error(`FireCollection: params should be an object`)
@@ -86,7 +101,9 @@ class FireCollection extends Collection {
   }
 
   /**
-   * @param {Record<string, any>} params
+   * Should return the path for this collection.
+   * Override in subclasses.
+   * @param {Params} [params]
    * @return { string | undefined}
    */
   // eslint-disable-next-line no-unused-vars
@@ -95,8 +112,10 @@ class FireCollection extends Collection {
   }
 
   /**
-   * @param {Record<string, any>} params
-   * @return { CollectionReference | undefined}
+   * Should return the base CollectionReference for this collection.
+   * Override in subclasses.
+   * @param {Params} [params]
+   * @returns {CollectionReference|undefined}
    */
   // eslint-disable-next-line no-unused-vars
   ref(params) {
@@ -104,8 +123,10 @@ class FireCollection extends Collection {
   }
 
   /**
+   * Optionally apply query constraints to a path ref and return a Query.
+   * Override in subclasses.
    * @param {CollectionReference} ref
-   * @param {Record<string, any>} params
+   * @param {Params} [params]
    * @returns {Query | undefined}
    */
   // eslint-disable-next-line no-unused-vars
