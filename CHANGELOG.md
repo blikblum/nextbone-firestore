@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ### [Unreleased][unreleased]
 
-### [v0.9.0] - 2025-12-14
+### [v0.9.1] - 2026-01-02
+
+- Implement ObservableModel `path()` method to define document path dynamically based on params
+
+### [v0.9.0] - 2025-12-14 (unreleased)
 
 #### Breaking Changes
 
