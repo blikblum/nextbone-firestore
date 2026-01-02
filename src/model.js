@@ -246,14 +246,7 @@ class ObservableModel extends FireModel {
       converter
     )
 
-    const queryResult = this.query(rootRef, params)
-    if (!queryResult) {
-      throw new Error(
-        `FireModel: query() must return a Query when no id param is provided`
-      )
-    }
-
-    return queryResult
+    return this.query(rootRef, params)
   }
 
   async updateQuery() {

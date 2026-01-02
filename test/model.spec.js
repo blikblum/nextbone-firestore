@@ -451,7 +451,7 @@ describe('ObservableModel', () => {
       model._unsubscribe?.()
     })
 
-    it('should throw error if query() does not return Query when no id is provided', async () => {
+    it('should return undefined when query() returns undefined', async () => {
       class TestObservableModel extends ObservableModel {
         collectionPath(params) {
           return params.collectionName
@@ -466,17 +466,8 @@ describe('ObservableModel', () => {
       const model = new TestObservableModel()
       model.params.collectionName = collectionName
 
-      let caughtError = null
-      try {
-        model.getQuery()
-      } catch (err) {
-        caughtError = err
-      }
-
-      expect(caughtError).to.be.an('error')
-      expect(caughtError.message).to.equal(
-        'FireModel: query() must return a Query when no id param is provided'
-      )
+      const result = model.getQuery()
+      expect(result).to.be.undefined
       model._unsubscribe?.()
     })
 
