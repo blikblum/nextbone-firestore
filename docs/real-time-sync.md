@@ -94,13 +94,15 @@ messages.unobserve()
 
 ```js
 class LiveUser extends ObservableModel {
-  collectionPath() {
-    return 'users'
+  path(params) {
+    if (params.userId) {
+      return `users/${params.userId}`
+    }
   }
 }
 
 const user = new LiveUser()
-user.params.id = 'user-123'
+user.params.userId = 'user-123'
 
 user.observe()
 await user.ready()
@@ -193,29 +195,25 @@ collection.params = {
 4. If observing, listeners are updated automatically
 5. New data loads and the model/collection updates
 
-### Using params.id for Documents
+### Using path() for Direct Document References
 
-For `ObservableModel`, setting `params.id` creates a document reference instead of a query:
+For `ObservableModel`, override the `path()` method to define a direct document reference:
+
+> **Note:** In most cases, subclasses should implement either `path()` or `collectionPath()` (not both) to make behavior predictable. Use `path()` when observing a specific document, and `collectionPath()` with `query()` when selecting from a collection.
 
 ```js
 class LiveUser extends ObservableModel {
-  collectionPath() {
-    return 'users'
-  }
-
-  query(ref, params) {
-    // This is NOT called when params.id is set
-    return query(ref, where('active', '==', true))
+  path(params) {
+    if (params.userId) {
+      return `users/${params.userId}`
+    }
   }
 }
 
 const user = new LiveUser()
 
-// This triggers a direct document lookup
-user.params.id = 'user-123'
-
-// This would trigger the query() method (if params.id wasn't set)
-user.params.active = true
+// This triggers a direct document lookup via path()
+user.params.userId = 'user-123'
 ```
 
 ---
@@ -506,7 +504,7 @@ class UserProfile {
 
   async loadUser(userId) {
     // Update both collections to new user
-    this.user.params.id = userId
+    this.user.params.userId = userId
     this.posts.params.userId = userId
 
     // Start observing if not already

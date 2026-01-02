@@ -358,6 +358,26 @@ await model.ready()
 console.log(model.attributes) // Data is now available
 ```
 
+#### `path(params)`
+
+Override this method to define a direct Firestore document path based on params.
+
+**Parameters:**
+
+- `params` (`Record<string, any>`): The current params object
+
+**Returns:** `string | undefined`
+
+```js
+class UserProfile extends ObservableModel {
+  path(params) {
+    if (params.orgId && params.userId) {
+      return `organizations/${params.orgId}/users/${params.userId}`
+    }
+  }
+}
+```
+
 #### `getQuery()`
 
 Returns the current Firestore query or document reference based on params.
@@ -366,8 +386,11 @@ Returns the current Firestore query or document reference based on params.
 
 **Behavior:**
 
-- If `params.id` is set, returns a `DocumentReference`
-- Otherwise, calls `query()` to get a `Query`
+- If `path()` returns a string, returns a `DocumentReference` for that path
+- If `path()` returns falsy, falls back to `collectionPath()` + `query()`
+- Returns `undefined` if neither `path()` nor `collectionPath()` return a value
+
+> **Note:** In most cases, subclasses should implement either `path()` or `collectionPath()` (not both) to make behavior predictable. Use `path()` when observing a specific document, and `collectionPath()` with `query()` when selecting from a collection.
 
 #### `updateQuery()`
 
@@ -405,13 +428,15 @@ model.on('change:status', (model, value) => {
 import { ObservableModel } from 'nextbone-firestore'
 
 class LiveUser extends ObservableModel {
-  collectionPath() {
-    return 'users'
+  path(params) {
+    if (params.userId) {
+      return `users/${params.userId}`
+    }
   }
 }
 
 const user = new LiveUser()
-user.params.id = 'user-123'
+user.params.userId = 'user-123'
 user.observe()
 
 await user.ready()
@@ -426,14 +451,16 @@ user.unobserve() // Stop listening
 
 ```js
 class OrganizationMember extends ObservableModel {
-  collectionPath(params) {
-    return `organizations/${params.orgId}/members`
+  path(params) {
+    if (params.orgId && params.memberId) {
+      return `organizations/${params.orgId}/members/${params.memberId}`
+    }
   }
 }
 
 const member = new OrganizationMember()
 member.params.orgId = 'org-123'
-member.params.id = 'member-456'
+member.params.memberId = 'member-456'
 
 member.observe()
 await member.ready()
@@ -518,7 +545,7 @@ class UserProfileComponent extends HTMLElement {
   }
 
   connectedCallback() {
-    this.user.params.id = this.getAttribute('user-id')
+    this.user.params.userId = this.getAttribute('user-id')
     this.user.observe()
     this.user.on('change', () => this.render())
   }

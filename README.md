@@ -78,25 +78,25 @@ await existingUser.destroy()
 
 Use `ObservableModel` for real-time synchronization with reactive params.
 
-Example setting doc id through params:
+Example setting doc path through params:
 
 ```js
 import { ObservableModel } from 'nextbone-firestore'
 import { query, where } from 'firebase/firestore'
 
 class LiveUser extends ObservableModel {
-  collectionPath(params) {
-    return `organizations/${params.orgId}/users`
+  path(params) {
+    if (params.orgId && params.userId) {
+      return `organizations/${params.orgId}/users/${params.userId}`
+    }
   }
 }
 
 const user = new LiveUser()
 
-// orgId is used in collectionPath
+// params are used in path()
 user.params.orgId = 'org-123'
-
-// id is a special param used to fetch a specific document (collectionPath/id)
-user.params.id = 'user-456'
+user.params.userId = 'user-456'
 
 // Start real-time sync
 user.observe()
@@ -110,9 +110,9 @@ console.log(user.attributes) // { id: 'user-456', name: '...', ... }
 user.unobserve()
 ```
 
-Example without id in params:
+Example without path defined:
 
-> When no `id` param is set, the model listens to a collection using the path returned by `collectionPath` and the constraints defined in `query`. By default, the first document is selected, being possible to customize using `selectSnapshot`.
+> When `path()` is not defined or returns falsy, the model listens to a collection using the path returned by `collectionPath` and the constraints defined in `query`. By default, the first document is selected, being possible to customize using `selectSnapshot`.
 
 ```js
 import { ObservableModel } from 'nextbone-firestore'

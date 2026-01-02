@@ -519,7 +519,7 @@ describe('ObservableModel', () => {
     })
   })
 
-  describe('params.id for document selection', () => {
+  describe('path method for document selection', () => {
     before(async () => {
       await initializeDataset()
     })
@@ -528,16 +528,18 @@ describe('ObservableModel', () => {
       await clearDataset()
     })
 
-    it('should construct full doc path when params.id exists', async () => {
+    it('should use path method to construct doc reference when defined', async () => {
       class TestObservableModel extends ObservableModel {
-        collectionPath(params) {
-          return params.collectionName
+        path(params) {
+          if (params.collectionName && params.docId) {
+            return `${params.collectionName}/${params.docId}`
+          }
         }
       }
 
       const model = new TestObservableModel()
       model.params.collectionName = collectionName
-      model.params.id = '2' // Document with count: 2
+      model.params.docId = '2' // Document with count: 2
 
       model.observe()
       await model.ready()
@@ -549,16 +551,51 @@ describe('ObservableModel', () => {
       model._unsubscribe?.()
     })
 
-    it('should update model when params.id changes', async () => {
+    it('should return undefined query when path returns falsy', () => {
+      class TestObservableModel extends ObservableModel {
+        path() {
+          return undefined
+        }
+      }
+
+      const model = new TestObservableModel()
+      expect(model.getQuery()).to.be.undefined
+    })
+
+    it('should fall back to collectionPath when path returns falsy', async () => {
       class TestObservableModel extends ObservableModel {
         collectionPath(params) {
           return params.collectionName
+        }
+
+        query(ref) {
+          return ref
         }
       }
 
       const model = new TestObservableModel()
       model.params.collectionName = collectionName
-      model.params.id = '1'
+
+      model.observe()
+      await model.ready()
+
+      // Should use collectionPath + query since path returns undefined
+      expect(model.id).to.not.be.undefined
+      model._unsubscribe?.()
+    })
+
+    it('should update model when path params change', async () => {
+      class TestObservableModel extends ObservableModel {
+        path(params) {
+          if (params.collectionName && params.docId) {
+            return `${params.collectionName}/${params.docId}`
+          }
+        }
+      }
+
+      const model = new TestObservableModel()
+      model.params.collectionName = collectionName
+      model.params.docId = '1'
 
       model.observe()
       await model.ready()
@@ -567,7 +604,7 @@ describe('ObservableModel', () => {
       expect(model.get('title')).to.equal('Document 1')
 
       // Change to different document
-      model.params.id = '3'
+      model.params.docId = '3'
       await model.ready()
 
       expect(model.id).to.equal('3')
@@ -576,16 +613,18 @@ describe('ObservableModel', () => {
       model._unsubscribe?.()
     })
 
-    it('should clear model when params.id points to non-existent document', async () => {
+    it('should clear model when path points to non-existent document', async () => {
       class TestObservableModel extends ObservableModel {
-        collectionPath(params) {
-          return params.collectionName
+        path(params) {
+          if (params.collectionName && params.docId) {
+            return `${params.collectionName}/${params.docId}`
+          }
         }
       }
 
       const model = new TestObservableModel()
       model.params.collectionName = collectionName
-      model.params.id = 'nonexistent'
+      model.params.docId = 'nonexistent'
 
       model.observe()
       await model.ready()
@@ -605,7 +644,7 @@ describe('ObservableModel', () => {
       await clearDataset()
     })
 
-    it('should select first document when params.id is not defined', async () => {
+    it('should select first document when using collectionPath with query', async () => {
       class TestObservableModel extends ObservableModel {
         collectionPath(params) {
           return params.collectionName
@@ -792,7 +831,7 @@ describe('ObservableModel', () => {
       await clearDataset()
     })
 
-    it('should apply query filters when params.id is not set', async () => {
+    it('should apply query filters when using collectionPath with query', async () => {
       class TestObservableModel extends ObservableModel {
         collectionPath(params) {
           return params.collectionName

@@ -213,33 +213,47 @@ class ObservableModel extends FireModel {
   collectionPath(params) {}
 
   /**
-   * @returns {Query | undefined}
+   * Should return the document path for this model.
+   * Override in subclasses.
+   * @param {Params} [params]
+   * @returns {string | undefined}
+   */
+  // eslint-disable-next-line no-unused-vars
+  path(params) {}
+
+  /**
+   * @returns {Query | DocumentReference | undefined}
    */
   getQuery() {
     const params = this._params
-    const path = this.collectionPath(params)
-    if (!path) {
-      return undefined
-    }
 
     /**
      * @type {{db: Firestore, converter: FirestoreDataConverter}}
      */
     const { db, converter } = this.constructor
-    const rootRef = collection(db, path).withConverter(converter)
 
-    if (!params.id) {
-      const queryResult = this.query(rootRef, params)
-      if (!queryResult) {
-        throw new Error(
-          `FireModel: query() must return a Query when no id param is provided`
-        )
-      }
-
-      return queryResult
+    const docPath = this.path(params)
+    if (docPath) {
+      return doc(db, docPath).withConverter(converter)
     }
 
-    return doc(rootRef, params.id)
+    const collectionPathResult = this.collectionPath(params)
+    if (!collectionPathResult) {
+      return undefined
+    }
+
+    const rootRef = collection(db, collectionPathResult).withConverter(
+      converter
+    )
+
+    const queryResult = this.query(rootRef, params)
+    if (!queryResult) {
+      throw new Error(
+        `FireModel: query() must return a Query when no id param is provided`
+      )
+    }
+
+    return queryResult
   }
 
   async updateQuery() {

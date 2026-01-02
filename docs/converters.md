@@ -660,8 +660,10 @@ class LivePost extends ObservableModel {
 
   static converter = postConverter
 
-  collectionPath() {
-    return 'posts'
+  path(params) {
+    if (params.postId) {
+      return `posts/${params.postId}`
+    }
   }
 }
 
@@ -678,7 +680,7 @@ posts.forEach((post) => {
 
 // Edit a post with real-time sync
 const editor = new LivePost()
-editor.params.id = 'post-123'
+editor.params.postId = 'post-123'
 editor.observe()
 await editor.ready()
 
