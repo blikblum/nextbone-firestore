@@ -98,6 +98,10 @@ type SyncAttrs = { id?: string; status?: string; timestamp?: number }
 
 class BaseSynchronization extends ObservableModel<SyncAttrs, SyncParams> {
   collectionPath(params: SyncParams) {
+    if (!params.orgId) {
+      // Returning undefined results in an empty collection.
+      return
+    }
     return `organizations/${params.orgId}/synchronizations`
   }
 
@@ -131,6 +135,10 @@ type PatientsParams = { clinicId?: string; includeInactive?: boolean }
 
 class Patients extends FireCollection<PatientAttrs, PatientsParams> {
   path(params: PatientsParams) {
+    if (!params.clinicId) {
+      // Returning undefined results in an empty collection.
+      return
+    }
     return `clinics/${params.clinicId}/patients`
   }
 
