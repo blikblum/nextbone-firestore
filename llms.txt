@@ -23,7 +23,7 @@ Installation:
 
 Basic setup:
 
-```js
+```ts
 import { initializeApp } from 'firebase/app'
 
 const app = initializeApp({
@@ -33,13 +33,15 @@ const app = initializeApp({
 
 FireModel (simple CRUD for a single document):
 
-```js
+```ts
 import { FireModel } from 'nextbone-firestore'
 import { collection, getFirestore } from 'firebase/firestore'
 
 const db = getFirestore()
 
-class User extends FireModel {
+type UserAttrs = { id?: string; name: string; email: string }
+
+class User extends FireModel<UserAttrs> {
   collectionRef() {
     return collection(db, 'users')
   }
@@ -59,11 +61,14 @@ await existingUser.destroy()
 
 ObservableModel (real-time sync for a single document):
 
-```js
+```ts
 import { ObservableModel } from 'nextbone-firestore'
 
-class LiveUser extends ObservableModel {
-  path(params) {
+type UserParams = { orgId?: string; userId?: string }
+type UserAttrs = { id?: string; name?: string }
+
+class LiveUser extends ObservableModel<UserAttrs, UserParams> {
+  path(params: UserParams) {
     if (params.orgId && params.userId) {
       return `organizations/${params.orgId}/users/${params.userId}`
     }
@@ -84,12 +89,15 @@ user.unobserve()
 
 ObservableModel with collection queries (select a snapshot from a query):
 
-```js
+```ts
 import { ObservableModel } from 'nextbone-firestore'
 import { query, where, orderBy, limit } from 'firebase/firestore'
 
-class BaseSynchronization extends ObservableModel {
-  collectionPath(params) {
+type SyncParams = { orgId?: string }
+type SyncAttrs = { id?: string; status?: string; timestamp?: number }
+
+class BaseSynchronization extends ObservableModel<SyncAttrs, SyncParams> {
+  collectionPath(params: SyncParams) {
     return `organizations/${params.orgId}/synchronizations`
   }
 
@@ -114,16 +122,19 @@ class PreviousSynchronization extends BaseSynchronization {
 
 FireCollection (manage multiple documents with optional real-time sync):
 
-```js
+```ts
 import { FireCollection } from 'nextbone-firestore'
 import { query, where, orderBy } from 'firebase/firestore'
 
-class Patients extends FireCollection {
-  path(params) {
+type PatientAttrs = { id?: string; name: string; active: boolean }
+type PatientsParams = { clinicId?: string; includeInactive?: boolean }
+
+class Patients extends FireCollection<PatientAttrs, PatientsParams> {
+  path(params: PatientsParams) {
     return `clinics/${params.clinicId}/patients`
   }
 
-  query(ref, params) {
+  query(ref, params: PatientsParams) {
     let q = ref
     if (!params.includeInactive) {
       q = query(q, where('active', '==', true))
@@ -133,31 +144,41 @@ class Patients extends FireCollection {
 }
 
 const patients = new Patients()
-patients.params.clinicId = 'clinic-1'
+patients.params.clinicId = 'clinic-123'
 
+// Use fetch() for a one-time load without real-time updates.
 await patients.fetch()
 
+// Use observe() to keep the collection synchronized in real time.
 patients.observe()
+console.log(patients.isLoading === true)
 await patients.ready()
+console.log(patients.isLoading === false)
 
 patients.forEach((patient) => {
   console.log(patient.get('name'))
 })
+
+// Changing params triggers automatic re-fetch while observing.
+patients.params.includeInactive = true
+await patients.ready()
 
 patients.unobserve()
 ```
 
 Custom Firestore converters (transform data on read/write):
 
-```js
+```ts
 import { FireCollection, ObservableModel } from 'nextbone-firestore'
 import { Timestamp } from 'firebase/firestore'
 
+type UserAttrs = { id?: string; name: string; createdAt?: Date; updatedAt?: Date }
+
 const userConverter = {
-  toFirestore(data) {
+  toFirestore(data: UserAttrs) {
     return {
       ...data,
-      createdAt: Timestamp.fromDate(data.createdAt),
+      createdAt: Timestamp.fromDate(data.createdAt ?? new Date()),
       updatedAt: Timestamp.now(),
     }
   },
@@ -171,7 +192,7 @@ const userConverter = {
   },
 }
 
-class Users extends FireCollection {
+class Users extends FireCollection<UserAttrs, Record<string, never>> {
   static converter = userConverter
 
   path() {
@@ -179,7 +200,7 @@ class Users extends FireCollection {
   }
 }
 
-class LiveUser extends ObservableModel {
+class LiveUser extends ObservableModel<UserAttrs, Record<string, never>> {
   static converter = userConverter
 
   collectionPath() {
