@@ -99,7 +99,7 @@ type SyncAttrs = { id?: string; status?: string; timestamp?: number }
 class BaseSynchronization extends ObservableModel<SyncAttrs, SyncParams> {
   collectionPath(params: SyncParams) {
     if (!params.orgId) {
-      // Returning undefined results in an empty collection.
+      // Returning undefined results in an empty model.
       return
     }
     return `organizations/${params.orgId}/synchronizations`
