@@ -1,0 +1,195 @@
+# nextbone-firestore
+
+> nextbone-firestore is a Nextbone binding for Firebase Firestore (modular v9+ SDK) that provides FireModel, ObservableModel, and FireCollection classes for CRUD and real-time synchronization.
+
+Use this document as a standalone guide for consuming the package. It summarizes the main features and shows how to use them in code.
+
+Key features:
+
+- Fetch data on demand or listen for real-time updates.
+- Bind to Firestore documents or collections with reactive params.
+- Support custom Firestore converters for data transformations.
+- TypeScript typings included.
+
+Requirements:
+
+- Firebase Web SDK v9+ (modular API).
+- Nextbone.
+
+Installation:
+
+- npm: `npm install nextbone-firestore nextbone firebase`
+- yarn: `yarn add nextbone-firestore nextbone firebase`
+
+Basic setup:
+
+```js
+import { initializeApp } from 'firebase/app'
+
+const app = initializeApp({
+  // your firebase config
+})
+```
+
+FireModel (simple CRUD for a single document):
+
+```js
+import { FireModel } from 'nextbone-firestore'
+import { collection, getFirestore } from 'firebase/firestore'
+
+const db = getFirestore()
+
+class User extends FireModel {
+  collectionRef() {
+    return collection(db, 'users')
+  }
+}
+
+const user = new User({ name: 'John', email: 'john@example.com' })
+await user.save()
+
+const existingUser = new User({ id: 'user-123' })
+await existingUser.fetch()
+
+existingUser.set('name', 'Jane')
+await existingUser.save()
+
+await existingUser.destroy()
+```
+
+ObservableModel (real-time sync for a single document):
+
+```js
+import { ObservableModel } from 'nextbone-firestore'
+
+class LiveUser extends ObservableModel {
+  path(params) {
+    if (params.orgId && params.userId) {
+      return `organizations/${params.orgId}/users/${params.userId}`
+    }
+  }
+}
+
+const user = new LiveUser()
+user.params.orgId = 'org-123'
+user.params.userId = 'user-456'
+
+user.observe()
+await user.ready()
+
+console.log(user.attributes)
+
+user.unobserve()
+```
+
+ObservableModel with collection queries (select a snapshot from a query):
+
+```js
+import { ObservableModel } from 'nextbone-firestore'
+import { query, where, orderBy, limit } from 'firebase/firestore'
+
+class BaseSynchronization extends ObservableModel {
+  collectionPath(params) {
+    return `organizations/${params.orgId}/synchronizations`
+  }
+
+  query(ref) {
+    return query(
+      ref,
+      where('status', '==', 'completed'),
+      orderBy('timestamp', 'desc'),
+      limit(2)
+    )
+  }
+}
+
+class LastSynchronization extends BaseSynchronization {}
+
+class PreviousSynchronization extends BaseSynchronization {
+  selectSnapshot(snapshot) {
+    return snapshot.docs[1]
+  }
+}
+```
+
+FireCollection (manage multiple documents with optional real-time sync):
+
+```js
+import { FireCollection } from 'nextbone-firestore'
+import { query, where, orderBy } from 'firebase/firestore'
+
+class Patients extends FireCollection {
+  path(params) {
+    return `clinics/${params.clinicId}/patients`
+  }
+
+  query(ref, params) {
+    let q = ref
+    if (!params.includeInactive) {
+      q = query(q, where('active', '==', true))
+    }
+    return query(q, orderBy('name'))
+  }
+}
+
+const patients = new Patients()
+patients.params.clinicId = 'clinic-1'
+
+await patients.fetch()
+
+patients.observe()
+await patients.ready()
+
+patients.forEach((patient) => {
+  console.log(patient.get('name'))
+})
+
+patients.unobserve()
+```
+
+Custom Firestore converters (transform data on read/write):
+
+```js
+import { FireCollection, ObservableModel } from 'nextbone-firestore'
+import { Timestamp } from 'firebase/firestore'
+
+const userConverter = {
+  toFirestore(data) {
+    return {
+      ...data,
+      createdAt: Timestamp.fromDate(data.createdAt),
+      updatedAt: Timestamp.now(),
+    }
+  },
+  fromFirestore(snapshot, options) {
+    const data = snapshot.data(options)
+    return {
+      ...data,
+      createdAt: data.createdAt?.toDate(),
+      updatedAt: data.updatedAt?.toDate(),
+    }
+  },
+}
+
+class Users extends FireCollection {
+  static converter = userConverter
+
+  path() {
+    return 'users'
+  }
+}
+
+class LiveUser extends ObservableModel {
+  static converter = userConverter
+
+  collectionPath() {
+    return 'users'
+  }
+}
+```
+
+Class overview:
+
+- `FireModel`: Simple CRUD for a single document (no real-time sync).
+- `ObservableModel`: Real-time synchronization for a single document or a selected document from a query.
+- `FireCollection`: Manage multiple documents with querying and optional real-time sync.
