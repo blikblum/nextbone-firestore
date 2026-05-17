@@ -146,12 +146,9 @@ class ObservableModel extends FireModel {
     this.updateQueryBatched = createMicrotaskBatcher(() =>
       this.changeSource(this.getQuery())
     )
+
     /** @type {Params} */
-    this._params = {}
-    /** @type {Params} */
-    this._paramsProxy = createWatchedProxy(this._params, () =>
-      this.updateQuery()
-    )
+    this._params = createWatchedProxy({}, () => this.updateQuery())
     this._unsubscribe = undefined
     this.readyPromise = Promise.resolve()
     this.queryPromise = undefined
@@ -160,7 +157,7 @@ class ObservableModel extends FireModel {
 
   /** @returns {Params} */
   get params() {
-    return this._paramsProxy
+    return this._params
   }
 
   /** @param {Params} value */
@@ -169,10 +166,7 @@ class ObservableModel extends FireModel {
       throw new Error(`FireCollection: params should be an object`)
     }
 
-    this._params = value
-    this._paramsProxy = createWatchedProxy(this._params, () =>
-      this.updateQuery()
-    )
+    this._params = createWatchedProxy({ ...value }, () => this.updateQuery())
     this.updateQuery()
   }
 
@@ -236,7 +230,7 @@ class ObservableModel extends FireModel {
    * @returns {Query | DocumentReference | undefined}
    */
   getQuery() {
-    const params = this._params
+    const params = { ...this._params }
 
     /**
      * @type {{db: Firestore, converter: FirestoreDataConverter}}

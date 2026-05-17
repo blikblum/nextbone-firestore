@@ -68,11 +68,7 @@ class FireCollection extends Collection {
       this.changeSource(this.getQuery())
     )
     /** @type {Params} */
-    this._params = {}
-    /** @type {Params} */
-    this._paramsProxy = createWatchedProxy(this._params, () =>
-      this.updateQuery()
-    )
+    this._params = createWatchedProxy({}, () => this.updateQuery())
     this.readyPromise = Promise.resolve()
     this.queryPromise = undefined
     this.observedCount = 0
@@ -87,7 +83,7 @@ class FireCollection extends Collection {
 
   /** @returns {Params} */
   get params() {
-    return this._paramsProxy
+    return this._params
   }
 
   /** @param {Params} value */
@@ -96,8 +92,7 @@ class FireCollection extends Collection {
       throw new Error(`FireCollection: params should be an object`)
     }
 
-    this._params = value
-    this._paramsProxy = createWatchedProxy(value, () => this.updateQuery())
+    this._params = createWatchedProxy({ ...value }, () => this.updateQuery())
     this.updateQuery()
   }
 
@@ -147,7 +142,8 @@ class FireCollection extends Collection {
    */
   getQuery() {
     let ref
-    const path = this.path(this._params)
+    const params = { ...this._params }
+    const path = this.path(params)
     if (path) {
       /**
        * @type {{db: Firestore, converter: FirestoreDataConverter}}
@@ -155,10 +151,10 @@ class FireCollection extends Collection {
       const { db, converter } = this.constructor
       ref = collection(db, path).withConverter(converter)
     } else {
-      ref = this.ref(this._params)
+      ref = this.ref(params)
     }
     this._ref = ref
-    return ref ? this.query(ref, this._params) : ref
+    return ref ? this.query(ref, params) : ref
   }
 
   /**
