@@ -1,7 +1,11 @@
 import { doc, setDoc } from 'firebase/firestore'
-import { clearFirestoreData, getDb } from './firebase.js'
+import {
+  clearFirestoreData,
+  getDb,
+  createTestCollectionPath,
+} from './firebase.js'
 
-export const collectionName = 'someCollection'
+export const collectionName = createTestCollectionPath('someCollection')
 export const collectionData = [
   {
     title: 'Document 1',
@@ -26,6 +30,7 @@ export const collectionData = [
 ]
 
 export async function initializeDataset() {
+  await clearFirestoreData()
   const db = await getDb()
   const promisedOperations = collectionData.map((data) => {
     return setDoc(doc(db, collectionName, `${data.count}`), data)

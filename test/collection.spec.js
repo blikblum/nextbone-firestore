@@ -13,7 +13,11 @@ import {
  * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter} from 'firebase/firestore'
  */
 
-import { getDb, createCollectionRef } from './helpers/firebase.js'
+import {
+  getDb,
+  createCollectionRef,
+  createTestCollectionPath,
+} from './helpers/firebase.js'
 
 import {
   collection as createCollection,
@@ -30,6 +34,12 @@ import {
 } from 'firebase/firestore'
 
 const { match, spy, stub } = sinon
+
+const getObservedCollectionPath = (testTitle) => {
+  return createTestCollectionPath(
+    `collection-${testTitle.replaceAll(' ', '_')}`
+  )
+}
 
 describe('FireCollection', () => {
   /**
@@ -198,15 +208,36 @@ describe('FireCollection', () => {
       expect(updateQuerySpy).to.be.calledOnce
     })
 
-    it('should call updateQuery when changing one of its properties', () => {
+    it('should call changeSource in next microtask when changing one of its properties', async () => {
       class TestCollection extends FireCollection {}
 
       const collection = new TestCollection()
-      const updateQuerySpy = spy(collection, 'updateQuery')
+      const changeSourceSpy = spy(collection, 'changeSource')
 
       collection.params.test = 'x'
 
-      expect(updateQuerySpy).to.be.calledOnce
+      expect(changeSourceSpy).to.be.not.be.called
+
+      await Promise.resolve()
+
+      expect(changeSourceSpy).to.be.called
+    })
+
+    it('should call changeSource once in next microtask when changing many times', async () => {
+      class TestCollection extends FireCollection {}
+
+      const collection = new TestCollection()
+      const changeSourceSpy = spy(collection, 'changeSource')
+
+      collection.params.test = 'x'
+      collection.params = { test: 'y' }
+      collection.params.otherTest = 'z'
+
+      expect(changeSourceSpy).to.be.not.be.called
+
+      await Promise.resolve()
+
+      expect(changeSourceSpy).to.be.calledOnce
     })
 
     it('should be passed to ref and query as a param', async () => {
@@ -238,7 +269,7 @@ describe('FireCollection', () => {
     it('should start observing for changes in collection', async function () {
       const ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -265,7 +296,7 @@ describe('FireCollection', () => {
     it('should clear data when ref changes to undefined', async function () {
       let ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -302,7 +333,7 @@ describe('FireCollection', () => {
     it('should set isLoading and trigger request', async function () {
       const ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -324,7 +355,7 @@ describe('FireCollection', () => {
     it('should set isLoading and trigger request after standalone fetch', async function () {
       const ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -347,7 +378,7 @@ describe('FireCollection', () => {
     it('should trigger load after observe', async function () {
       const ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       await addDoc(ref, { a: 1 })
       class TestCollection extends FireCollection {
@@ -375,7 +406,7 @@ describe('FireCollection', () => {
     it('should trigger load after standalone fetch', async function () {
       const ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       await addDoc(ref, { a: 1 })
       class TestCollection extends FireCollection {
@@ -425,7 +456,7 @@ describe('FireCollection', () => {
     it('should remove attribute when deleted in database', async function () {
       const ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -462,7 +493,7 @@ describe('FireCollection', () => {
       let callCount = 0
       const ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -495,7 +526,7 @@ describe('FireCollection', () => {
     it('should not stop observing for changes when observedCount is greater than 0', async function () {
       const ref = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -682,6 +713,34 @@ describe('FireCollection', () => {
       expect(collection.length).to.be.equal(0)
       collection.onSnapshotUnsubscribeFn?.()
     })
+
+    it('should refetch after a snapshot error clears listener state', async () => {
+      class TestCollection extends FireCollection {
+        ref() {
+          return createCollection(db, collectionName)
+        }
+      }
+
+      const collection = new TestCollection()
+      const fetchInitialDataStub = stub(collection, 'fetchInitialData')
+      const consoleErrorStub = stub(console, 'error')
+
+      try {
+        collection.onSnapshotUnsubscribeFn = () => {}
+        collection.firedInitialFetch = true
+        collection.changeLoading(true)
+        collection.handleSnapshotError(new Error('listen failed'))
+
+        await collection.ready()
+
+        expect(collection.onSnapshotUnsubscribeFn).to.be.undefined
+        expect(collection.firedInitialFetch).to.be.equal(false)
+        expect(collection.isLoading).to.be.equal(false)
+        expect(fetchInitialDataStub).to.be.calledOnce
+      } finally {
+        consoleErrorStub.restore()
+      }
+    })
   })
 
   describe('sync', () => {
@@ -831,7 +890,7 @@ describe('FireCollection', () => {
     it('should add a new document', async function () {
       const collectionRef = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
 
       class TestCollection extends FireCollection {
@@ -850,7 +909,7 @@ describe('FireCollection', () => {
     it('should not call ref if already computed', async function () {
       const collectionRef = createCollectionRef(
         db,
-        `collection-${this.test.title.replaceAll(' ', '_')}`
+        getObservedCollectionPath(this.test.title)
       )
       const refSpy = sinon.spy()
 

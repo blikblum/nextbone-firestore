@@ -1,5 +1,9 @@
 import { Collection } from 'nextbone'
 import {
+  createMicrotaskBatcher,
+  createWatchedProxy,
+} from 'nextbone/class-utils.js'
+import {
   getDocs,
   addDoc,
   onSnapshot,
@@ -7,7 +11,6 @@ import {
   getFirestore,
   collection,
 } from 'firebase/firestore'
-import { createParamsProxy } from './helpers.js'
 
 /**
  * @import { Model } from 'nextbone'
@@ -61,10 +64,15 @@ class FireCollection extends Collection {
      * @type {CollectionReference | undefined}
      */
     this._ref = undefined
+    this.updateQueryBatched = createMicrotaskBatcher(() =>
+      this.changeSource(this.getQuery())
+    )
     /** @type {Params} */
     this._params = {}
     /** @type {Params} */
-    this._paramsProxy = createParamsProxy(this._params, this)
+    this._paramsProxy = createWatchedProxy(this._params, () =>
+      this.updateQuery()
+    )
     this.readyPromise = Promise.resolve()
     this.queryPromise = undefined
     this.observedCount = 0
@@ -89,7 +97,7 @@ class FireCollection extends Collection {
     }
 
     this._params = value
-    this._paramsProxy = createParamsProxy(value, this)
+    this._paramsProxy = createWatchedProxy(value, () => this.updateQuery())
     this.updateQuery()
   }
 
@@ -170,14 +178,13 @@ class FireCollection extends Collection {
     return this._query
   }
 
+  /**
+   * @returns {Query | undefined}
+   */
   async updateQuery() {
-    if (!this.queryPromise) {
-      // by default batch reset calls
-      this.queryPromise = Promise.resolve()
-      await this.queryPromise
-      this.changeSource(this.getQuery())
-      this.queryPromise = undefined
-    }
+    this.queryPromise = this.updateQueryBatched()
+    await this.queryPromise
+    this.queryPromise = undefined
     return this._query
   }
 
@@ -227,12 +234,11 @@ class FireCollection extends Collection {
   }
 
   async ready() {
-    const isListening = !!this.onSnapshotUnsubscribeFn
     if (this.queryPromise) {
       await this.queryPromise
     }
     this.ensureQuery()
-    if (!isListening) {
+    if (!this.onSnapshotUnsubscribeFn) {
       /**
        * If the client is calling ready() but document is not being observed /
        * no listeners are set up, we treat ready() as a one time fetch request,
@@ -303,6 +309,7 @@ class FireCollection extends Collection {
         this.handleSnapshot(snapshot)
       })
       .catch((err) => {
+        this.firedInitialFetch = false
         this.changeLoading(false)
         this.trigger('load', this)
         console.error(`Fetch initial data failed: ${err.message}`)
@@ -336,9 +343,11 @@ class FireCollection extends Collection {
    * @param {FirestoreError} err
    */
   handleSnapshotError(err) {
+    this.onSnapshotUnsubscribeFn = undefined
+    this.firedInitialFetch = false
     this.changeLoading(false)
     this.trigger('load', this)
-    throw new Error(`${this._query?.path} snapshot error: ${err.message}`)
+    console.error(`${this._query?.path} snapshot error: ${err.message}`)
   }
 
   logDebug(message) {
@@ -371,7 +380,10 @@ class FireCollection extends Collection {
             await this.beforeSync()
             this.handleSnapshot(snapshot)
           },
-          (err) => this.handleSnapshotError(err)
+          (err) => {
+            this.onSnapshotUnsubscribeFn = undefined
+            this.handleSnapshotError(err)
+          }
         )
       }
     }

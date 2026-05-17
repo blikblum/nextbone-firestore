@@ -10,7 +10,10 @@ import {
   queryEqual,
 } from 'firebase/firestore'
 import { Model } from 'nextbone'
-import { createParamsProxy } from './helpers.js'
+import {
+  createMicrotaskBatcher,
+  createWatchedProxy,
+} from 'nextbone/class-utils.js'
 
 /**
  * @import { ModelSetOptions, Model } from 'nextbone'
@@ -139,10 +142,16 @@ class ObservableModel extends FireModel {
      * @type { Query | DocumentReference | undefined}
      */
     this._query = undefined
+
+    this.updateQueryBatched = createMicrotaskBatcher(() =>
+      this.changeSource(this.getQuery())
+    )
     /** @type {Params} */
     this._params = {}
     /** @type {Params} */
-    this._paramsProxy = createParamsProxy(this._params, this)
+    this._paramsProxy = createWatchedProxy(this._params, () =>
+      this.updateQuery()
+    )
     this._unsubscribe = undefined
     this.readyPromise = Promise.resolve()
     this.queryPromise = undefined
@@ -161,7 +170,9 @@ class ObservableModel extends FireModel {
     }
 
     this._params = value
-    this._paramsProxy = createParamsProxy(value, this)
+    this._paramsProxy = createWatchedProxy(this._params, () =>
+      this.updateQuery()
+    )
     this.updateQuery()
   }
 
@@ -249,14 +260,13 @@ class ObservableModel extends FireModel {
     return this.query(rootRef, params)
   }
 
+  /**
+   * @returns {Query | undefined}
+   */
   async updateQuery() {
-    if (!this.queryPromise) {
-      // by default batch reset calls
-      this.queryPromise = Promise.resolve()
-      await this.queryPromise
-      this.changeSource(this.getQuery())
-      this.queryPromise = undefined
-    }
+    this.queryPromise = this.updateQueryBatched()
+    await this.queryPromise
+    this.queryPromise = undefined
     return this._query
   }
 
@@ -310,6 +320,7 @@ class ObservableModel extends FireModel {
             this.handleSnapshot(snapshot)
           },
           (err) => {
+            this._unsubscribe = undefined
             this.handleSnapshotError(err)
           }
         )
@@ -343,9 +354,10 @@ class ObservableModel extends FireModel {
    * @param {FirestoreError} err
    */
   handleSnapshotError(err) {
+    this._unsubscribe = undefined
     this.changeLoading(false)
     this.trigger('load', this)
-    throw new Error(`${this._query?.path} snapshot error: ${err.message}`)
+    console.error(`${this._query?.path} snapshot error: ${err.message}`)
   }
 
   changeReady(isReady) {

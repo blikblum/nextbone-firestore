@@ -2,6 +2,12 @@ import { collection } from 'firebase/firestore'
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { nanoid } from 'nanoid'
 
+export const testRunId = nanoid()
+
+export const createTestCollectionPath = (path) => {
+  return `${path}-${testRunId}`
+}
+
 /**
  * @type {import('@firebase/rules-unit-testing').RulesTestEnvironment | undefined}
  */

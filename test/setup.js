@@ -1,11 +1,15 @@
 import chai from 'chai'
 import sinonChai from 'sinon-chai'
-import { cleanup } from './helpers/firebase.js'
+import { cleanup, clearFirestoreData } from './helpers/firebase.js'
 
-export async function mochaGlobalSetup() {
-  chai.use(sinonChai)
-}
+chai.use(sinonChai)
 
-export async function mochaGlobalTeardown() {
-  await cleanup()
+export const mochaHooks = {
+  async beforeAll() {
+    await clearFirestoreData()
+  },
+
+  async afterAll() {
+    await cleanup()
+  },
 }

@@ -21,7 +21,7 @@ import {
   orderBy,
 } from 'firebase/firestore'
 
-const { spy } = sinon
+const { spy, stub } = sinon
 
 describe('FireModel', () => {
   let db
@@ -415,6 +415,57 @@ describe('ObservableModel', () => {
       const model = new ObservableModel()
       expect(model.query).to.be.a('function')
       expect(model.collectionPath).to.be.a('function')
+    })
+
+    it('should call changeSource in next microtask when changing one of its properties', async () => {
+      class TestModel extends ObservableModel {}
+
+      const model = new TestModel()
+      const changeSourceSpy = spy(model, 'changeSource')
+
+      model.params.test = 'x'
+
+      expect(changeSourceSpy).to.be.not.be.called
+
+      await Promise.resolve()
+
+      expect(changeSourceSpy).to.be.called
+    })
+
+    it('should call changeSource once in next microtask when changing many times', async () => {
+      class TestModel extends ObservableModel {}
+
+      const model = new TestModel()
+      const changeSourceSpy = spy(model, 'changeSource')
+
+      model.params.test = 'x'
+      model.params = { test: 'y' }
+      model.params.otherTest = 'z'
+
+      expect(changeSourceSpy).to.be.not.be.called
+
+      await Promise.resolve()
+
+      expect(changeSourceSpy).to.be.calledOnce
+    })
+
+    it('should clear listener state after a snapshot error', async () => {
+      const model = new ObservableModel()
+      const consoleErrorStub = stub(console, 'error')
+
+      try {
+        model._query = doc(db, collectionName, '1')
+        model._unsubscribe = () => {}
+        model.changeLoading(true)
+        model.handleSnapshotError(new Error('listen failed'))
+
+        await model.ready()
+
+        expect(model._unsubscribe).to.be.undefined
+        expect(model.isLoading).to.be.equal(false)
+      } finally {
+        consoleErrorStub.restore()
+      }
     })
   })
 
