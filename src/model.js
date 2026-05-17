@@ -16,7 +16,6 @@ import {
 } from 'nextbone/class-utils.js'
 
 /**
- * @import { ModelSetOptions, Model } from 'nextbone'
  * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, DocumentSnapshot, FirestoreError} from 'firebase/firestore'
  */
 
@@ -33,6 +32,11 @@ const getDocRef = (model, method) => {
   return model.ref()
 }
 
+/**
+ * NextBone model with methods to mutate a Firestore document
+ * @template {Record<string, any>} [TAttributes=Record<string, any>]
+ * @extends {Model<TAttributes, string, any>}
+ */
 class FireModel extends Model {
   /**
    * @return {Promise<void> | undefined}
@@ -112,7 +116,7 @@ class FireModel extends Model {
  * NextBone model synchronized with a Firestore document.
  * @template {Record<string, any>} [TAttributes=Record<string, any>]
  * @template {Record<string, any>} [Params=Record<string, any>]
- * @extends {FireModel<TAttributes, ModelSetOptions, any>}
+ * @extends {FireModel<TAttributes, string, any>}
  */
 class ObservableModel extends FireModel {
   /**

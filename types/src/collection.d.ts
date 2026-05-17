@@ -1,10 +1,10 @@
 /**
  * NextBone collection synchronized with a Firestore collection or query.
- * @template {import('nextbone').Model} [TModel=import('nextbone').Model]
+ * @template {Model} [TModel=Model]
  * @template {Record<string, any>} [Params=Record<string, any>]
  * @extends {Collection<TModel>}
  */
-export class FireCollection<TModel extends import("nextbone").Model = import("nextbone").Model<any, ModelSetOptions, any>, Params extends Record<string, any> = Record<string, any>> extends Collection<TModel> {
+export class FireCollection<TModel extends Model = Model<any, string, any>, Params extends Record<string, any> = Record<string, any>> extends Collection<TModel> {
     /**
      * @returns {Firestore}
      */
@@ -34,10 +34,9 @@ export class FireCollection<TModel extends import("nextbone").Model = import("ne
      * @type {CollectionReference | undefined}
      */
     _ref: CollectionReference | undefined;
+    updateQueryBatched: () => Promise<void>;
     /** @type {Params} */
     _params: Params;
-    /** @type {Params} */
-    _paramsProxy: Params;
     readyPromise: Promise<void>;
     queryPromise: Promise<void>;
     observedCount: number;
@@ -93,7 +92,10 @@ export class FireCollection<TModel extends import("nextbone").Model = import("ne
      * @returns {Query | undefined}
      */
     ensureQuery(): Query | undefined;
-    updateQuery(): Promise<Query<import("@firebase/firestore").DocumentData, import("@firebase/firestore").DocumentData>>;
+    /**
+     * @returns {Query | undefined}
+     */
+    updateQuery(): Query | undefined;
     changeSource(newQuery: any): void;
     /**
      * @param {*} data
@@ -118,9 +120,9 @@ export class FireCollection<TModel extends import("nextbone").Model = import("ne
      * @param {FirestoreError} err
      */
     handleSnapshotError(err: FirestoreError): void;
+    onSnapshotUnsubscribeFn: any;
     logDebug(message: any): void;
     updateListeners(shouldListen: any): void;
-    onSnapshotUnsubscribeFn: import("@firebase/firestore").Unsubscribe;
     /**
      * @param {boolean} isLoading
      * @returns
@@ -130,7 +132,7 @@ export class FireCollection<TModel extends import("nextbone").Model = import("ne
         id: string;
     }[]>;
 }
-import type { ModelSetOptions } from 'nextbone';
+import type { Model } from 'nextbone';
 import { Collection } from 'nextbone';
 import type { Query } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';

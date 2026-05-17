@@ -1,5 +1,10 @@
-export class FireModel extends Model<any, ModelSetOptions, any> {
-    constructor(attributes?: Partial<any>, options?: any);
+/**
+ * NextBone model with methods to mutate a Firestore document
+ * @template {Record<string, any>} [TAttributes=Record<string, any>]
+ * @extends {Model<TAttributes, string, any>}
+ */
+export class FireModel<TAttributes extends Record<string, any> = Record<string, any>> extends Model<TAttributes, string, any> {
+    constructor(attributes?: Partial<TAttributes>, options?: any);
     /**
      * @return {Promise<void> | undefined}
      */
@@ -21,10 +26,11 @@ export class FireModel extends Model<any, ModelSetOptions, any> {
 }
 /**
  * NextBone model synchronized with a Firestore document.
+ * @template {Record<string, any>} [TAttributes=Record<string, any>]
  * @template {Record<string, any>} [Params=Record<string, any>]
- * @extends {FireModel<Record<string, any>, ModelSetOptions, any>}
+ * @extends {FireModel<TAttributes, string, any>}
  */
-export class ObservableModel<Params extends Record<string, any> = Record<string, any>> {
+export class ObservableModel<TAttributes extends Record<string, any> = Record<string, any>, Params extends Record<string, any> = Record<string, any>> extends FireModel<TAttributes> {
     /**
      * @returns {Firestore}
      */
@@ -42,11 +48,10 @@ export class ObservableModel<Params extends Record<string, any> = Record<string,
      * @type { Query | DocumentReference | undefined}
      */
     _query: Query | DocumentReference | undefined;
+    updateQueryBatched: () => Promise<void>;
     /** @type {Params} */
     _params: Params;
-    /** @type {Params} */
-    _paramsProxy: Params;
-    _unsubscribe: import("@firebase/firestore").Unsubscribe;
+    _unsubscribe: any;
     readyPromise: Promise<void>;
     queryPromise: Promise<void>;
     observedCount: number;
@@ -78,10 +83,20 @@ export class ObservableModel<Params extends Record<string, any> = Record<string,
      */
     collectionPath(params?: Params): string | undefined;
     /**
+     * Should return the document path for this model.
+     * Override in subclasses.
+     * @param {Params} [params]
+     * @returns {string | undefined}
+     */
+    path(params?: Params): string | undefined;
+    /**
+     * @returns {Query | DocumentReference | undefined}
+     */
+    getQuery(): Query | DocumentReference | undefined;
+    /**
      * @returns {Query | undefined}
      */
-    getQuery(): Query | undefined;
-    updateQuery(): Promise<Query<import("@firebase/firestore").DocumentData, import("@firebase/firestore").DocumentData> | DocumentReference<import("@firebase/firestore").DocumentData, import("@firebase/firestore").DocumentData>>;
+    updateQuery(): Query | undefined;
     /**
      * @param {DocumentReference | Query} newQuery
      * @returns
@@ -103,10 +118,8 @@ export class ObservableModel<Params extends Record<string, any> = Record<string,
     changeReady(isReady: any): void;
     readyResolveFn: (value: any) => void;
     changeLoading(isLoading: any): void;
-    isLoading: any;
     ready(): Promise<void>;
 }
-import type { ModelSetOptions } from 'nextbone';
 import { Model } from 'nextbone';
 import type { CollectionReference } from 'firebase/firestore';
 import type { DocumentReference } from 'firebase/firestore';
