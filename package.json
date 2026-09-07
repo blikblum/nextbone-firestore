@@ -22,24 +22,28 @@
     "nextbone": ">=0.30.0"
   },
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^5.0.0",
-    "chai": "^4.3.7",
-    "eslint": "^8.32.0",
-    "eslint-config-prettier": "^8.6.0",
-    "firebase": "^12.6.0",
-    "firebase-tools": "^15.18.0",
-    "lodash-es": "^4.17.21",
-    "mocha": "^10.2.0",
-    "nanoid": "^5.0.5",
-    "nextbone": "^0.30.0",
-    "prettier": "^2.8.3",
-    "sinon": "^15.1.0",
-    "sinon-chai": "^3.7.0",
-    "typescript": "^5.9.3"
+    "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "chai": "^6.2.2",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "firebase": "^12.18.0",
+    "firebase-tools": "^15.29.0",
+    "globals": "^17.12.0",
+    "lodash-es": "^4.18.1",
+    "mocha": "^12.0.0",
+    "nanoid": "^6.0.1",
+    "nextbone": "^0.31.2",
+    "prettier": "^3.9.6",
+    "sinon": "^22.1.0",
+    "sinon-chai": "^4.0.1",
+    "typescript": "^7.0.2"
   },
   "scripts": {
+    "format": "prettier --write src test",
+    "format:check": "prettier --check src test",
     "lint": "eslint src test",
-    "firebase:start": "firebase emulators:start --only firestore",
+    "start-firestore": "firebase emulators:start --only firestore",
     "test": "mocha --require test/setup.js test/*.spec.js",
     "test:watch": "mocha --watch --require test/setup.js test/*.spec.js",
     "generate-types": "tsc --project tsconfig.types.json"
@@ -50,5 +54,5 @@
     "types",
     "LICENSE.txt"
   ],
-  "packageManager": "yarn@4.12.0"
+  "packageManager": "yarn@4.18.0"
 }

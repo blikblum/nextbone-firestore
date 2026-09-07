@@ -148,7 +148,7 @@ class ObservableModel extends FireModel {
     this._query = undefined
 
     this.updateQueryBatched = createMicrotaskBatcher(() =>
-      this.changeSource(this.getQuery())
+      this.changeSource(this.getQuery()),
     )
 
     /** @type {Params} */
@@ -252,7 +252,7 @@ class ObservableModel extends FireModel {
     }
 
     const rootRef = collection(db, collectionPathResult).withConverter(
-      converter
+      converter,
     )
 
     return this.query(rootRef, params)
@@ -320,7 +320,7 @@ class ObservableModel extends FireModel {
           (err) => {
             this._unsubscribe = undefined
             this.handleSnapshotError(err)
-          }
+          },
         )
       }
     }

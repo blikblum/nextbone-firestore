@@ -65,7 +65,7 @@ class FireCollection extends Collection {
      */
     this._ref = undefined
     this.updateQueryBatched = createMicrotaskBatcher(() =>
-      this.changeSource(this.getQuery())
+      this.changeSource(this.getQuery()),
     )
     /** @type {Params} */
     this._params = createWatchedProxy({}, () => this.updateQuery())
@@ -320,7 +320,7 @@ class FireCollection extends Collection {
    */
   handleSnapshot(snapshot) {
     this.logDebug(
-      `handleSnapshot, ${Date.now()} docs.length: ${snapshot.docs.length}`
+      `handleSnapshot, ${Date.now()} docs.length: ${snapshot.docs.length}`,
     )
 
     const data = snapshot.docs.map((doc) => ({
@@ -379,7 +379,7 @@ class FireCollection extends Collection {
           (err) => {
             this.onSnapshotUnsubscribeFn = undefined
             this.handleSnapshotError(err)
-          }
+          },
         )
       }
     }

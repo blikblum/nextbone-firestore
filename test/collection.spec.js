@@ -37,7 +37,7 @@ const { match, spy, stub } = sinon
 
 const getObservedCollectionPath = (testTitle) => {
   return createTestCollectionPath(
-    `collection-${testTitle.replaceAll(' ', '_')}`
+    `collection-${testTitle.replaceAll(' ', '_')}`,
   )
 }
 
@@ -269,7 +269,7 @@ describe('FireCollection', () => {
     it('should start observing for changes in collection', async function () {
       const ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -296,7 +296,7 @@ describe('FireCollection', () => {
     it('should clear data when ref changes to undefined', async function () {
       let ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -333,7 +333,7 @@ describe('FireCollection', () => {
     it('should set isLoading and trigger request', async function () {
       const ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -355,7 +355,7 @@ describe('FireCollection', () => {
     it('should set isLoading and trigger request after standalone fetch', async function () {
       const ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -378,7 +378,7 @@ describe('FireCollection', () => {
     it('should trigger load after observe', async function () {
       const ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       await addDoc(ref, { a: 1 })
       class TestCollection extends FireCollection {
@@ -406,7 +406,7 @@ describe('FireCollection', () => {
     it('should trigger load after standalone fetch', async function () {
       const ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       await addDoc(ref, { a: 1 })
       class TestCollection extends FireCollection {
@@ -445,7 +445,7 @@ describe('FireCollection', () => {
       await new Promise((resolve) => {
         collection.once('sync', () => {
           expect(parseSpy).to.be.calledOnce.and.be.calledWithMatch(
-            collectionData.map((item) => match(item))
+            collectionData.map((item) => match(item)),
           )
           resolve()
         })
@@ -456,7 +456,7 @@ describe('FireCollection', () => {
     it('should remove attribute when deleted in database', async function () {
       const ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -493,7 +493,7 @@ describe('FireCollection', () => {
       let callCount = 0
       const ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -526,7 +526,7 @@ describe('FireCollection', () => {
     it('should not stop observing for changes when observedCount is greater than 0', async function () {
       const ref = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       class TestCollection extends FireCollection {
         ref() {
@@ -780,7 +780,7 @@ describe('FireCollection', () => {
       const parseSpy = spy(collection, 'parse')
       await collection.fetch()
       expect(parseSpy).to.be.calledOnce.and.be.calledWithMatch(
-        collectionData.map((item) => match(item))
+        collectionData.map((item) => match(item)),
       )
     })
   })
@@ -890,7 +890,7 @@ describe('FireCollection', () => {
     it('should add a new document', async function () {
       const collectionRef = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
 
       class TestCollection extends FireCollection {
@@ -909,7 +909,7 @@ describe('FireCollection', () => {
     it('should not call ref if already computed', async function () {
       const collectionRef = createCollectionRef(
         db,
-        getObservedCollectionPath(this.test.title)
+        getObservedCollectionPath(this.test.title),
       )
       const refSpy = sinon.spy()
 

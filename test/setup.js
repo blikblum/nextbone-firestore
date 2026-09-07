@@ -1,8 +1,8 @@
-import chai from 'chai'
+import { use } from 'chai'
 import sinonChai from 'sinon-chai'
 import { cleanup, clearFirestoreData } from './helpers/firebase.js'
 
-chai.use(sinonChai)
+use(sinonChai)
 
 export const mochaHooks = {
   async beforeAll() {
