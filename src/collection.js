@@ -14,7 +14,7 @@ import {
 
 /**
  * @import { Model } from 'nextbone'
- * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, SnapshotOptions} from 'firebase/firestore'
+ * @import {Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, SnapshotOptions, FirestoreError} from 'firebase/firestore'
  */
 
 /** @type {{ serverTimestamps: SnapshotOptions['serverTimestamps'], debug: boolean }} */

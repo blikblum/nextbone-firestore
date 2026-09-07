@@ -1,10 +1,11 @@
+import { Model } from 'nextbone';
+import type { Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, DocumentSnapshot, FirestoreError } from 'firebase/firestore';
 /**
  * NextBone model with methods to mutate a Firestore document
  * @template {Record<string, any>} [TAttributes=Record<string, any>]
- * @extends {Model<TAttributes, string, any>}
+ * @extends {Model<TAttributes>}
  */
-export class FireModel<TAttributes extends Record<string, any> = Record<string, any>> extends Model<TAttributes, string, any> {
-    constructor(attributes?: Partial<TAttributes>, options?: any);
+declare class FireModel<TAttributes extends Record<string, any> = Record<string, any>> extends Model<TAttributes> {
     /**
      * @return {Promise<void> | undefined}
      */
@@ -28,9 +29,22 @@ export class FireModel<TAttributes extends Record<string, any> = Record<string, 
  * NextBone model synchronized with a Firestore document.
  * @template {Record<string, any>} [TAttributes=Record<string, any>]
  * @template {Record<string, any>} [Params=Record<string, any>]
- * @extends {FireModel<TAttributes, string, any>}
+ * @extends {FireModel<TAttributes>}
  */
-export class ObservableModel<TAttributes extends Record<string, any> = Record<string, any>, Params extends Record<string, any> = Record<string, any>> extends FireModel<TAttributes> {
+declare class ObservableModel<TAttributes extends Record<string, any> = Record<string, any>, Params extends Record<string, any> = Record<string, any>> extends FireModel<TAttributes> {
+    static _db: Firestore | undefined;
+    /**
+     * @type { Query | DocumentReference | undefined}
+     */
+    _query: Query | DocumentReference | undefined;
+    updateQueryBatched: () => Promise<void>;
+    /** @type {Params} */
+    _params: Params;
+    _unsubscribe: import("@firebase/firestore").Unsubscribe | undefined;
+    readyPromise: Promise<void>;
+    queryPromise: Promise<void> | undefined;
+    observedCount: number;
+    readyResolveFn: ((value: any) => void) | undefined;
     /**
      * @returns {Firestore}
      */
@@ -44,21 +58,10 @@ export class ObservableModel<TAttributes extends Record<string, any> = Record<st
      */
     static converter: FirestoreDataConverter<any, import("@firebase/firestore").DocumentData>;
     constructor(attributes: any, options: any);
-    /**
-     * @type { Query | DocumentReference | undefined}
-     */
-    _query: Query | DocumentReference | undefined;
-    updateQueryBatched: () => Promise<void>;
-    /** @type {Params} */
-    _params: Params;
-    _unsubscribe: any;
-    readyPromise: Promise<void>;
-    queryPromise: Promise<void>;
-    observedCount: number;
-    /** @param {Params} value */
-    set params(value: Params);
     /** @returns {Params} */
     get params(): Params;
+    /** @param {Params} value */
+    set params(value: Params);
     get isObserved(): boolean;
     observe(): void;
     unobserve(): void;
@@ -116,17 +119,8 @@ export class ObservableModel<TAttributes extends Record<string, any> = Record<st
      */
     handleSnapshotError(err: FirestoreError): void;
     changeReady(isReady: any): void;
-    readyResolveFn: (value: any) => void;
     changeLoading(isLoading: any): void;
     ready(): Promise<void>;
 }
-import { Model } from 'nextbone';
-import type { CollectionReference } from 'firebase/firestore';
-import type { DocumentReference } from 'firebase/firestore';
-import type { Query } from 'firebase/firestore';
-import type { QuerySnapshot } from 'firebase/firestore';
-import type { DocumentSnapshot } from 'firebase/firestore';
-import type { FirestoreError } from 'firebase/firestore';
-import type { Firestore } from 'firebase/firestore';
-import type { FirestoreDataConverter } from 'firebase/firestore';
+export { FireModel, ObservableModel };
 //# sourceMappingURL=model.d.ts.map

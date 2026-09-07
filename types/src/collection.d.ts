@@ -1,10 +1,39 @@
+import { Collection } from 'nextbone';
+import type { Model } from 'nextbone';
+import type { Firestore, DocumentReference, CollectionReference, Query, FirestoreDataConverter, QuerySnapshot, SnapshotOptions, FirestoreError } from 'firebase/firestore';
 /**
  * NextBone collection synchronized with a Firestore collection or query.
  * @template {Model} [TModel=Model]
  * @template {Record<string, any>} [Params=Record<string, any>]
  * @extends {Collection<TModel>}
  */
-export class FireCollection<TModel extends Model = Model<any, string, any>, Params extends Record<string, any> = Record<string, any>> extends Collection<TModel> {
+declare class FireCollection<TModel extends Model = Model, Params extends Record<string, any> = Record<string, any>> extends Collection<TModel> {
+    static _db: Firestore | undefined;
+    /**
+     * @type {Query | undefined}
+     */
+    _query: Query | undefined;
+    /**
+     * @type {CollectionReference | undefined}
+     */
+    _ref: CollectionReference | undefined;
+    updateQueryBatched: () => Promise<void>;
+    /** @type {Params} */
+    _params: Params;
+    readyPromise: Promise<void>;
+    queryPromise: Promise<void> | undefined;
+    observedCount: number;
+    firedInitialFetch: boolean;
+    options: {
+        serverTimestamps: SnapshotOptions['serverTimestamps'];
+        debug: boolean;
+    } & {
+        serverTimestamps?: SnapshotOptions['serverTimestamps'];
+        debug?: boolean | undefined;
+    };
+    isDebugEnabled: boolean;
+    readyResolveFn: ((value: any) => void) | undefined;
+    onSnapshotUnsubscribeFn: import("@firebase/firestore").Unsubscribe | undefined;
     /**
      * @returns {Firestore}
      */
@@ -23,37 +52,14 @@ export class FireCollection<TModel extends Model = Model<any, string, any>, Para
     constructor({ models, ...options }?: {
         models?: any;
     } & Partial<{
-        serverTimestamps: SnapshotOptions["serverTimestamps"];
+        serverTimestamps: SnapshotOptions['serverTimestamps'];
         debug: boolean;
     }>);
-    /**
-     * @type {Query | undefined}
-     */
-    _query: Query | undefined;
-    /**
-     * @type {CollectionReference | undefined}
-     */
-    _ref: CollectionReference | undefined;
-    updateQueryBatched: () => Promise<void>;
-    /** @type {Params} */
-    _params: Params;
-    readyPromise: Promise<void>;
-    queryPromise: Promise<void>;
-    observedCount: number;
-    firedInitialFetch: boolean;
-    options: {
-        serverTimestamps: SnapshotOptions["serverTimestamps"];
-        debug: boolean;
-    } & {
-        serverTimestamps?: SnapshotOptions["serverTimestamps"];
-        debug?: boolean;
-    };
-    isDebugEnabled: boolean;
     get isObserved(): boolean;
-    /** @param {Params} value */
-    set params(value: Params);
     /** @returns {Params} */
     get params(): Params;
+    /** @param {Params} value */
+    set params(value: Params);
     /**
      * @return {Promise<void> | undefined}
      */
@@ -109,7 +115,6 @@ export class FireCollection<TModel extends Model = Model<any, string, any>, Para
      * @param {boolean} isReady
      */
     changeReady(isReady: boolean): void;
-    readyResolveFn: (value: any) => void;
     fetchInitialData(): void;
     /**
      * @param { QuerySnapshot } snapshot
@@ -120,7 +125,6 @@ export class FireCollection<TModel extends Model = Model<any, string, any>, Para
      * @param {FirestoreError} err
      */
     handleSnapshotError(err: FirestoreError): void;
-    onSnapshotUnsubscribeFn: any;
     logDebug(message: any): void;
     updateListeners(shouldListen: any): void;
     /**
@@ -132,13 +136,5 @@ export class FireCollection<TModel extends Model = Model<any, string, any>, Para
         id: string;
     }[]>;
 }
-import type { Model } from 'nextbone';
-import { Collection } from 'nextbone';
-import type { Query } from 'firebase/firestore';
-import type { CollectionReference } from 'firebase/firestore';
-import type { SnapshotOptions } from 'firebase/firestore';
-import type { DocumentReference } from 'firebase/firestore';
-import type { QuerySnapshot } from 'firebase/firestore';
-import type { Firestore } from 'firebase/firestore';
-import type { FirestoreDataConverter } from 'firebase/firestore';
+export { FireCollection };
 //# sourceMappingURL=collection.d.ts.map

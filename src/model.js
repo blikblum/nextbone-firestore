@@ -35,7 +35,7 @@ const getDocRef = (model, method) => {
 /**
  * NextBone model with methods to mutate a Firestore document
  * @template {Record<string, any>} [TAttributes=Record<string, any>]
- * @extends {Model<TAttributes, string, any>}
+ * @extends {Model<TAttributes>}
  */
 class FireModel extends Model {
   /**
@@ -116,7 +116,7 @@ class FireModel extends Model {
  * NextBone model synchronized with a Firestore document.
  * @template {Record<string, any>} [TAttributes=Record<string, any>]
  * @template {Record<string, any>} [Params=Record<string, any>]
- * @extends {FireModel<TAttributes, string, any>}
+ * @extends {FireModel<TAttributes>}
  */
 class ObservableModel extends FireModel {
   /**
